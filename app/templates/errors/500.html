@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Local error - UAX Studio{% endblock %}
+{% block content %}
+<section class="centered-state">
+  <h1>Something went wrong locally</h1>
+  <p>The app rolled back the current database operation. Try the action again.</p>
+  <a class="button" href="{{ url_for('main.projects') }}">Back to agents</a>
+</section>
+{% endblock %}

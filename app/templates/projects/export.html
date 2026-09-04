@@ -1,0 +1,97 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Export{% endblock %}
+{% block workspace_title %}Export build package{% endblock %}
+{% block workspace_intro %}
+<p class="workspace-intro">Download a versioned ZIP handoff, choose whether source material is included, and inspect the brief before exporting.</p>
+{% endblock %}
+{% block workspace %}
+{% set file_groups = [
+  ('Start here', [('AI_BUILD_BRIEF.md', 'Primary handoff for an AI builder or engineering team.'), ('README.md', 'Package summary and contents.')]),
+  ('Product definition', [('product_intent.md', 'Purpose, audience, outcomes, and constraints.'), ('build_contract.md', 'Editable implementation contract.'), ('acceptance_criteria.md', 'Functional and UX acceptance checks.')]),
+  ('Workflow', [('agent_experience_contract.md', 'Compatibility copy for agent-focused workflows.'), ('workflow.md', 'Readable workflow summary.'), ('workflow.mmd', 'Mermaid workflow diagram.'), ('workflow.json', 'Structured workflow data.')]),
+  ('Review record', [('findings.md', 'Optional quality notes and decisions.'), ('implementation_manifest.json', 'File hashes for the generated package.')])
+] %}
+<div class="export-layout">
+  <section class="panel export-options">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Package options</p>
+        <h2>ZIP package</h2>
+      </div>
+      <span class="health-badge {{ brief_health.status_key }}">{{ brief_health.status_label }}</span>
+    </div>
+    <p>{{ brief_health.summary }}</p>
+    {% if brief_health.issue_count %}
+      <button class="button primary" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
+    {% endif %}
+    <label class="checkbox-label">
+      <input type="checkbox" id="include-sources">
+      Include my source files
+    </label>
+    <p class="quiet">Source files can make a package larger and may include private context. They stay excluded unless you select this option.</p>
+    <button class="button primary" id="generate-export" data-url="{{ url_for('main.create_export_api', project_id=project.id) }}">Download ZIP</button>
+  </section>
+
+  <section class="panel export-history">
+    <div class="section-heading">
+      <h2>Export history</h2>
+      <span class="quiet" data-export-count data-count="{{ project.exports|length }}">{{ project.exports|length }} package{{ '' if project.exports|length == 1 else 's' }}</span>
+    </div>
+    <div class="export-list" data-export-list {% if not project.exports %}hidden{% endif %}>
+      {% for export in project.exports|sort(attribute='created_at', reverse=true) %}
+        <article>
+          <div>
+            <strong>Package {{ export.created_at|datetime_local }}</strong>
+            <small>Contract v{{ export.contract_version }} - Workflow v{{ export.workflow_version }}</small>
+          </div>
+          <a class="button small" href="{{ url_for('main.download_export', export_id=export.id) }}">Download ZIP</a>
+            <details>
+              <summary>Individual files</summary>
+              <ul>
+                {% for file in export.manifest_json.get('files', []) %}
+                  <li><a href="{{ url_for('main.download_export', export_id=export.id, file=file.path) }}">{{ file.path }}</a></li>
+                {% endfor %}
+                <li><a href="{{ url_for('main.download_export', export_id=export.id, file='implementation_manifest.json') }}">implementation_manifest.json</a></li>
+              </ul>
+            </details>
+        </article>
+      {% endfor %}
+    </div>
+    <p class="quiet" data-export-empty {% if project.exports %}hidden{% endif %}>No packages exported yet.</p>
+  </section>
+</div>
+
+<section class="package-contents" aria-labelledby="package-contents-title">
+  <div class="section-heading">
+    <h2 id="package-contents-title">Package contents</h2>
+  </div>
+  <div class="package-file-groups">
+    {% for group, files in file_groups %}
+      <section class="package-file-group">
+        <h3>{{ group }}</h3>
+        <ul class="plain-list">
+          {% for filename, description in files %}
+            <li><code>{{ filename }}</code><span>{{ description }}</span></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="export-preview-panel" aria-labelledby="preview-title">
+  <div class="section-heading">
+    <h2 id="preview-title">Preview</h2>
+    <span class="quiet">AI_BUILD_BRIEF.md</span>
+  </div>
+  <article class="rendered-brief-preview">{{ preview }}</article>
+  <details>
+    <summary>Raw Markdown</summary>
+    <pre class="export-preview">{{ preview }}</pre>
+  </details>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/export.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/attention.js') }}"></script>
+{% endblock %}

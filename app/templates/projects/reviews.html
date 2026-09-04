@@ -1,0 +1,62 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Quality Check{% endblock %}
+{% block workspace_title %}Quality Check{% endblock %}
+{% block workspace %}
+<section class="toolbar-strip">
+  <label>Check type
+    <select id="reviewer-type">
+      <option value="all">All checks</option>
+      {% for key, label in reviewers.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button class="button primary" id="run-review" data-url="{{ url_for('main.run_review_api', project_id=project.id) }}">Run quality check</button>
+  <label>Severity filter
+    <select id="finding-filter">
+      <option value="all">All severities</option>
+      {% for severity in ['critical','high','medium','low','observation'] %}
+        <option value="{{ severity }}">{{ severity|title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+</section>
+
+<section class="band">
+  <h3>Quality notes</h3>
+  {% if project.findings %}
+    <div class="finding-list">
+      {% for finding in project.findings %}
+        <article class="finding-card" data-severity="{{ finding.severity }}" data-finding-id="{{ finding.id }}">
+          <header>
+            <div>
+              <h4>{{ finding.title }}</h4>
+              <p>{{ finding.category }} - {{ finding.severity|title }} - {{ finding.status|title }}</p>
+            </div>
+            <span class="severity {{ finding.severity }}">{{ finding.severity|title }}</span>
+          </header>
+          <p>{{ finding.explanation }}</p>
+          <dl class="detail-list">
+            <div><dt>Evidence</dt><dd>{{ finding.evidence }}</dd></div>
+            <div><dt>Instruction area</dt><dd>{{ finding.related_contract_section or 'Not specified' }}</dd></div>
+            <div><dt>Recommendation</dt><dd>{{ finding.recommendation }}</dd></div>
+          </dl>
+          <label>Your note
+            <textarea rows="2" data-resolution-note>{{ finding.resolution_note }}</textarea>
+          </label>
+          <div class="action-row">
+            {% for status in ['accepted','resolved','dismissed','open'] %}
+              <button class="button small" data-finding-status="{{ status }}" data-url="{{ url_for('main.update_finding_api', finding_id=finding.id) }}">{{ status|title }}</button>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">Run a quality check to find missing details, risks, accessibility gaps, or build assumptions. Checks never edit your plan automatically.</div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/reviews.js') }}"></script>
+{% endblock %}

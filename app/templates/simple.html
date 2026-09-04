@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}New agent - UAX Studio{% endblock %}
+{% block content %}
+<section class="page-header new-brief-header new-agent-header">
+  <div>
+    <p class="eyebrow">New agent</p>
+    <h1>Create a new agent</h1>
+    <p class="workspace-intro">Describe what this agent should help build or coordinate. UAX Studio will preserve your details and draft a structured handoff you can edit.</p>
+  </div>
+</section>
+
+<form class="new-brief-form" method="post" action="{{ url_for('main.create_simple_project_route') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <section class="new-brief-main">
+    <label>Agent name
+      <input name="name" placeholder="Customer portal agent">
+      <span class="helper-text">You can change this later.</span>
+    </label>
+
+    <label>What kind of product is this?
+      <select name="build_type">
+        <option value="">Not sure yet</option>
+        <option value="Website">Website</option>
+        <option value="Application">Application</option>
+        <option value="AI agent">AI agent</option>
+        <option value="Automation workflow">Automation workflow</option>
+        <option value="Internal tool">Internal tool</option>
+      </select>
+    </label>
+
+    <label>Who is it for?
+      <input name="target_user" placeholder="Customers, admins, internal operators, or Not sure yet">
+    </label>
+
+    <label>What should they be able to accomplish?
+      <input name="desired_outcome" placeholder="Book appointments, compare concepts, track requests">
+    </label>
+
+    <label class="span-2">What should this agent help build?
+      <textarea name="brief" rows="7" required placeholder="Describe the product, important workflows, must-have features, content, integrations, and anything it should avoid."></textarea>
+      <span class="helper-text">A few sentences are enough. More context produces a stronger first draft.</span>
+    </label>
+  </section>
+
+  <details class="progressive-detail">
+    <summary> Add more detail</summary>
+    <div class="optional-detail-grid">
+      <label>Features or pages
+        <textarea name="features_or_pages" rows="4" placeholder="Dashboard, profile page, project detail, admin review queue"></textarea>
+      </label>
+      <label>Data and integrations
+        <textarea name="data_integrations" rows="4" placeholder="Users, agents, payments, calendar, CRM, local files"></textarea>
+      </label>
+      <label>Constraints and things to avoid
+        <textarea name="constraints" rows="4" placeholder="No payments, no external email sending, must work offline"></textarea>
+      </label>
+      <label>Target platform or stack
+        <input name="target_platform" placeholder="Flask, static site, mobile app, local desktop">
+      </label>
+      <label>Deployment environment
+        <input name="deployment_environment" placeholder="Local only, internal server, public web">
+      </label>
+      <label>Examples or references
+        <textarea name="examples" rows="4" placeholder="Comparable products, sample copy, design notes, links to reproduce manually"></textarea>
+      </label>
+      <label class="span-2">Source document
+        <input type="file" name="starter_document" accept=".txt,.md,.json,.csv,.pdf,.docx">
+        <span class="helper-text">Supported: TXT, MD, JSON, CSV, PDF, DOCX. Files remain on this device and can be removed from agent settings.</span>
+      </label>
+    </div>
+  </details>
+
+  <footer class="form-actions new-brief-actions">
+    <button class="button" type="submit" name="action" value="save_draft" formnovalidate data-loading-message="Saving your draft...">Save as draft</button>
+    <button class="button primary" type="submit" name="action" value="draft_brief" data-loading-message="Drafting your agent...">Draft my agent</button>
+  </footer>
+</form>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Agents - UAX Studio{% endblock %}
+{% block content %}
+<section class="page-header projects-header agents-header">
+  <div>
+    <p class="eyebrow">Agents</p>
+    <h1>Agents</h1>
+    <p class="workspace-intro">Find a saved agent, understand its current state, and continue where you left off.</p>
+  </div>
+</section>
+
+<section class="dashboard-controls agent-controls" aria-label="Agent filters">
+  <label>Search agent
+    <input id="brief-search" type="search" placeholder="Find by name, audience, or outcome">
+  </label>
+  <label>Agent status
+    <select id="brief-status-filter">
+      <option value="all">All active</option>
+      <option value="needs_input">Needs attention</option>
+      <option value="needs_review">Needs review</option>
+      <option value="ready_to_export">Ready to export</option>
+      <option value="exported">Exported</option>
+    </select>
+  </label>
+  <label>Sort
+    <select id="brief-sort">
+      <option value="updated">Last updated</option>
+      <option value="name">Name</option>
+      <option value="status">Status</option>
+    </select>
+  </label>
+</section>
+
+<section class="project-list-shell agents-list-shell" aria-labelledby="agents-title">
+  <h2 id="agents-title" class="sr-only">Saved agents</h2>
+  {% if active_project_cards %}
+    <div class="project-list agent-card-grid" id="project-list">
+      {% for card in active_project_cards %}
+        {% set project = card.project %}
+        {% set health = card.brief_health %}
+        <article
+          class="agent-card"
+          data-brief-card
+          data-status="{{ health.status_key }}"
+          data-updated="{{ project.updated_at.isoformat() }}"
+          data-name="{{ project.name|lower }}"
+          data-search="{{ project.name }} {{ project.description }} {{ project.workflow_name }} {{ project.target_user }} {{ project.desired_outcome }}"
+        >
+          <div class="agent-card-main">
+            <h3><a href="{{ url_for('main.project_simple', project_id=project.id) }}">{{ project.name }}</a></h3>
+            <p>{{ project.description or project.desired_outcome or 'No purpose captured yet.' }}</p>
+          </div>
+          <div class="agent-card-state">
+            <span class="brief-status-badge {{ health.status_key }}">{{ health.status_label }}</span>
+            <small>{{ health.summary }}</small>
+          </div>
+          <div class="agent-card-footer">
+            <time datetime="{{ project.updated_at.isoformat() }}">{{ project.updated_at|datetime_local }}</time>
+            {% if health.issue_count %}
+              <button class="button small" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
+            {% endif %}
+            <a class="button primary" href="{{ url_for('main.project_simple', project_id=project.id) }}">Open agent</a>
+            <details class="overflow-menu">
+              <summary aria-label="Agent actions">More</summary>
+              <div>
+                <a href="{{ url_for('main.export_page', project_id=project.id) }}">Export</a>
+                <a href="{{ url_for('main.workflow_page', project_id=project.id) }}">Workflow</a>
+                <form method="post" action="{{ url_for('main.duplicate_project_route', project_id=project.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit">Duplicate</button>
+                </form>
+                <form method="post" action="{{ url_for('main.archive_project_route', project_id=project.id) }}" data-confirm="Archive this agent?">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit">Archive</button>
+                </form>
+                <a href="{{ url_for('main.project_overview', project_id=project.id) }}">Agent settings</a>
+              </div>
+            </details>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+    <div id="brief-no-matches" class="empty-state dashboard-empty hidden">
+      <h2>No agents match those filters.</h2>
+      <button class="button" type="button" id="clear-brief-filters">Clear filters</button>
+    </div>
+  {% else %}
+    <div class="empty-state dashboard-empty">
+      <h2>Turn your first idea into an agent.</h2>
+      <p>Start with a short product description and UAX Studio will create an editable local draft.</p>
+    </div>
+  {% endif %}
+</section>
+
+{% if archived_project_cards %}
+<section class="dashboard-archive" aria-labelledby="archived-title">
+  <div class="section-heading">
+    <h2 id="archived-title">Archived agents</h2>
+    <span class="quiet">{{ archived_project_cards|length }} archived</span>
+  </div>
+  <div class="compact-list">
+    {% for card in archived_project_cards %}
+      {% set project = card.project %}
+      <article>
+        <strong>{{ project.name }}</strong>
+        <span>Archived {{ project.archived_at|datetime_local }}</span>
+        <form method="post" action="{{ url_for('main.restore_project_route', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="button small" type="submit">Restore</button>
+        </form>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/attention.js') }}"></script>
+{% endblock %}

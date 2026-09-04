@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found - UAX Studio{% endblock %}
+{% block content %}
+<section class="centered-state">
+  <h1>Not found</h1>
+  <p>The local record you requested is no longer available.</p>
+  <a class="button" href="{{ url_for('main.projects') }}">Back to agents</a>
+</section>
+{% endblock %}

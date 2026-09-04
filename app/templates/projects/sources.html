@@ -1,0 +1,80 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Background Info{% endblock %}
+{% block workspace_title %}Background Info{% endblock %}
+{% block workspace %}
+<div class="split-layout">
+  <section class="panel">
+    <h3>Add background information</h3>
+    <form class="stacked-form" data-api-form data-reload method="post" enctype="multipart/form-data" action="{{ url_for('main.create_source_api', project_id=project.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Title
+        <input name="title" placeholder="Research notes, examples, or product idea">
+      </label>
+      <label>Description
+        <textarea name="description" rows="2"></textarea>
+      </label>
+      <label>Upload a file
+        <input type="file" name="file" accept=".txt,.md,.json,.csv,.pdf,.docx">
+      </label>
+      <p class="quiet">Supported: TXT, MD, JSON, CSV, PDF, DOCX. Individual files are limited to 25 MB.</p>
+      <label>Or paste text
+        <textarea name="text" rows="8" placeholder="Paste notes, requirements, examples, user feedback, or anything else the build should respect."></textarea>
+      </label>
+      <button class="button primary" type="submit">Save background info</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h3>Create key details</h3>
+    <p>Turn the saved background information into editable users, goals, features, constraints, risks, and open questions.</p>
+    <button class="button primary" data-run-synthesis="{{ url_for('main.synthesize_api', project_id=project.id) }}">Create key details</button>
+    <p class="quiet">Generated details are saved as drafts that you can edit before they guide the build brief.</p>
+  </section>
+</div>
+
+<section class="band">
+  <div class="section-heading">
+    <h3>Saved background info</h3>
+    <span class="quiet">{{ project.source_documents|length }} total</span>
+  </div>
+  {% if project.source_documents %}
+    <div class="source-list">
+      {% for source in project.source_documents %}
+        <article class="source-editor" data-source-id="{{ source.id }}">
+          <header>
+            <div>
+              <h4>{{ source.title }}</h4>
+              <p>{{ source.source_type|replace('_', ' ')|title }}{% if source.original_filename %} - {{ source.original_filename }}{% endif %}</p>
+            </div>
+            <span class="status-chip {{ source.extraction_status }}">{{ source.extraction_status|title }}</span>
+          </header>
+          {% if source.extraction_error %}
+            <p class="error-text">{{ source.extraction_error }}</p>
+          {% endif %}
+          <label>Title
+            <input data-source-field="title" value="{{ source.title }}">
+          </label>
+          <label>Description
+            <textarea data-source-field="description" rows="2">{{ source.description }}</textarea>
+          </label>
+          <label>Editable text
+            <textarea data-source-field="edited_text" rows="10">{{ source.edited_text }}</textarea>
+          </label>
+          <details>
+            <summary>Original preview</summary>
+            <pre>{{ source.extracted_text }}</pre>
+          </details>
+          <div class="action-row">
+            <button class="button small" data-save-source="{{ url_for('main.update_source_api', source_id=source.id) }}">Save edits</button>
+            <button class="button small danger" data-delete-source="{{ url_for('main.delete_source_api', source_id=source.id) }}">Remove</button>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">Add background information to create the key details for your build plan.</div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/sources.js') }}"></script>
+{% endblock %}

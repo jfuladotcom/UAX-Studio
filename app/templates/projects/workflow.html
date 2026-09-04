@@ -1,0 +1,178 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Workflow{% endblock %}
+{% block main_class %}project-page workflow-builder-page{% endblock %}
+{% block workspace_title %}Workflow{% endblock %}
+{% block workspace_intro %}
+<p class="workspace-intro">Build the node graph, tune step routing, and review the ordered build sequence from one workspace.</p>
+{% endblock %}
+{% block workspace %}
+{% set initial_panel = request.args.get('panel') if request.args.get('panel') in ['sources', 'inspector'] else '' %}
+{% set requested_view = request.args.get('view', '') %}
+{% set initial_view = 'graph' %}
+{% if requested_view in ['graph', 'connections', 'sequence'] %}
+  {% set initial_view = requested_view %}
+{% elif requested_view == 'list' %}
+  {% set initial_view = 'sequence' %}
+{% endif %}
+{% if initial_panel %}
+  {% set initial_view = 'graph' %}
+{% endif %}
+{% set focus_node_id = request.args.get('node', '') %}
+<div class="workflow-view-bar">
+  <div class="workflow-view-toggle" role="tablist" aria-label="Workflow view">
+    <button class="button small" type="button" role="tab" aria-controls="workflow-graph-panel" aria-selected="{{ 'true' if initial_view == 'graph' else 'false' }}" aria-pressed="{{ 'true' if initial_view == 'graph' else 'false' }}" data-workflow-view="graph">Graph</button>
+    <button class="button small" type="button" role="tab" aria-controls="workflow-connections-panel" aria-selected="{{ 'true' if initial_view == 'connections' else 'false' }}" aria-pressed="{{ 'true' if initial_view == 'connections' else 'false' }}" data-workflow-view="connections">Connections</button>
+    <button class="button small" type="button" role="tab" aria-controls="workflow-sequence-panel" aria-selected="{{ 'true' if initial_view == 'sequence' else 'false' }}" aria-pressed="{{ 'true' if initial_view == 'sequence' else 'false' }}" data-workflow-view="sequence">Build Sequence</button>
+  </div>
+</div>
+<section class="workflow-app{{ ' drawer-open' if initial_panel }}" data-active-view="{{ initial_view }}" data-initial-panel="{{ initial_panel }}" data-focus-node-id="{{ focus_node_id }}" data-workflow-id="{{ workflow.id }}" data-workflow='{{ workflow_data|tojson }}'>
+  <div id="workflow-graph-panel" class="workflow-builder-layout" role="tabpanel" data-workflow-view-panel="graph" {% if initial_view != 'graph' %}hidden{% endif %}>
+    <div class="workflow-main">
+      <div class="toolbar-strip workflow-toolbar" aria-label="Step map controls">
+        <div class="split-add-control" data-node-add-control>
+          <button class="button primary" type="button" id="add-node" aria-haspopup="menu" aria-expanded="false" aria-controls="node-type-menu">
+            <span id="add-node-label">Add Step</span>
+          </button>
+          <label class="sr-only" for="node-type">Step type</label>
+          <select id="node-type" class="sr-only" aria-label="Step type" tabindex="-1">
+            {% for type in node_types %}
+              <option value="{{ type }}">{{ type|replace('_', ' ')|title }}</option>
+            {% endfor %}
+          </select>
+          <div class="node-type-menu" id="node-type-menu" role="menu" aria-label="Step type choices" aria-hidden="true">
+            {% for type in node_types %}
+              <button class="node-type-option" type="button" role="menuitem" data-node-type="{{ type }}">
+                <span>{{ type|replace('_', ' ')|title }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+        <button class="button" type="button" id="connect-mode" aria-pressed="false" title="Select a step, then click Connect.">Connect</button>
+        <input type="hidden" id="edge-label" value="Next">
+        <button class="button" type="button" id="disconnect-mode" aria-pressed="false" title="Select a step, then click Disconnect.">Disconnect</button>
+      </div>
+
+      <div class="canvas-wrap workflow-canvas-wrap" aria-label="Step map canvas">
+        <div id="workflow-canvas" class="workflow-canvas" tabindex="0">
+          <svg id="workflow-edges" aria-hidden="true"></svg>
+          <div id="workflow-nodes"></div>
+        </div>
+      </div>
+
+      <div class="workflow-zoom-rail" aria-label="Step map zoom controls">
+        <label class="sr-only" for="workflow-zoom">Zoom</label>
+        <input id="workflow-zoom" type="range" min="45" max="180" step="5" value="100" aria-label="Step map zoom">
+        <output id="workflow-zoom-value" for="workflow-zoom">100%</output>
+        <button class="button" type="button" id="fit-workflow">Fit</button>
+      </div>
+    </div>
+
+    <aside class="workflow-drawer" aria-label="Step details" aria-hidden="{{ 'false' if initial_panel else 'true' }}" {% if not initial_panel %}inert{% endif %}>
+      <header class="workflow-drawer-header">
+        <div class="drawer-tabs" role="tablist" aria-label="Step detail tabs">
+          <button class="{{ 'active' if initial_panel != 'sources' else '' }}" type="button" role="tab" aria-selected="{{ 'false' if initial_panel == 'sources' else 'true' }}" data-panel-tab="inspector">Step Details</button>
+          <button class="{{ 'active' if initial_panel == 'sources' else '' }}" type="button" role="tab" aria-selected="{{ 'true' if initial_panel == 'sources' else 'false' }}" data-panel-tab="sources">Background</button>
+        </div>
+        <button class="icon-button" type="button" id="close-workflow-panel" aria-label="Close panel" title="Close panel">x</button>
+      </header>
+
+      <div class="drawer-panel{{ ' hidden' if initial_panel == 'sources' else '' }}" data-panel-content="inspector">
+        <p id="inspector-empty" class="quiet">Select a step to edit its details.</p>
+        <form id="node-form" class="stacked-form hidden">
+          <label>Label<input name="label"></label>
+          <label>Type
+            <select name="node_type">
+              {% for type in node_types %}
+                <option value="{{ type }}">{{ type|replace('_', ' ')|title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Actor<input name="actor"></label>
+          <label>Description<textarea name="description" rows="4"></textarea></label>
+          <label>Expected input<textarea name="expected_input" rows="2"></textarea></label>
+          <label>Expected output<textarea name="expected_output" rows="2"></textarea></label>
+          <label>Data accessed<textarea name="data_accessed" rows="2"></textarea></label>
+          <label>Permission level<input name="permission_level"></label>
+          <label>Confidence behavior<textarea name="confidence_behavior" rows="2"></textarea></label>
+          <label>User-visible status<textarea name="user_visible_status" rows="2"></textarea></label>
+          <label>Recovery behavior<textarea name="recovery_behavior" rows="2"></textarea></label>
+          <div class="action-row">
+            <button class="button primary" type="submit">Save node</button>
+            <button class="button danger" type="button" id="delete-node">Delete</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="sources" class="drawer-panel{{ '' if initial_panel == 'sources' else ' hidden' }}" data-panel-content="sources">
+        <form class="stacked-form workflow-source-form" data-api-form data-reload method="post" enctype="multipart/form-data" action="{{ url_for('main.create_source_api', project_id=project.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label>Title
+            <input name="title" placeholder="Research notes, examples, or product idea">
+          </label>
+          <label>Description
+            <textarea name="description" rows="2"></textarea>
+          </label>
+          <label>Upload a file
+            <input type="file" name="file" accept=".txt,.md,.json,.csv,.pdf,.docx">
+          </label>
+          <label>Or paste text
+            <textarea name="text" rows="5" placeholder="Paste notes, requirements, examples, or anything the build should respect."></textarea>
+          </label>
+          <button class="button primary" type="submit">Add background info</button>
+        </form>
+
+        <div class="drawer-source-list" aria-label="Saved background info">
+          {% if project.source_documents %}
+            {% for source in project.source_documents %}
+              <article>
+                <strong>{{ source.title }}</strong>
+                <span>{{ source.extraction_status|title }}{% if source.original_filename %} - {{ source.original_filename }}{% endif %}</span>
+              </article>
+            {% endfor %}
+          {% else %}
+            <p class="quiet">No background info yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="workflow-connections-panel" class="workflow-support-grid workflow-list-panel" role="tabpanel" data-workflow-view-panel="connections" {% if initial_view != 'connections' %}hidden{% endif %}>
+    <section class="panel workflow-list-card">
+      <div class="section-heading-row">
+        <div>
+          <p class="eyebrow">Connections</p>
+          <h2>Step routing</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>From</th><th>Condition</th><th>To</th><th>Default</th><th>Action</th></tr></thead>
+          <tbody id="edge-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="workflow-sequence-panel" class="workflow-support-grid workflow-list-panel" role="tabpanel" data-workflow-view-panel="sequence" {% if initial_view != 'sequence' %}hidden{% endif %}>
+    <section class="panel workflow-list-card">
+      <div class="section-heading-row">
+        <div>
+          <p class="eyebrow">Steps</p>
+          <h2>Build sequence</h2>
+        </div>
+        <button class="button small" type="button" data-workflow-view="graph">Edit graph</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Step</th><th>Type</th><th>Actor</th><th>Description</th></tr></thead>
+          <tbody id="node-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/workflow.js') }}"></script>
+{% endblock %}

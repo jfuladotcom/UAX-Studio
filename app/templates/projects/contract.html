@@ -1,0 +1,58 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Build Instructions{% endblock %}
+{% block workspace_title %}Build Instructions{% endblock %}
+{% block workspace %}
+{% set provenance_labels = {
+  'provider_suggested': 'Draft Suggestion',
+  'user_written': 'Your Edit',
+  'system_seeded': 'Starter Detail',
+  'demo_seeded': 'Demo Detail'
+} %}
+<section class="toolbar-strip">
+  <button class="button primary" data-contract-suggest="{{ url_for('main.suggest_contract_api', contract_id=contract.id) }}">Suggest instructions</button>
+  <button class="button" data-contract-version="{{ url_for('main.create_contract_version_api', contract_id=contract.id) }}">Save version</button>
+  <label>View version
+    <select id="contract-version-view">
+      {% for version in versions %}
+        <option value="{{ version.id }}" {{ 'selected' if version.id == contract.id else '' }}>Version {{ version.version_number }} - {{ version.status|title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <span id="contract-status" class="status-chip">Saved</span>
+</section>
+
+<form id="contract-editor" class="contract-editor" data-contract-id="{{ contract.id }}" data-save-url="{{ url_for('main.update_contract_api', contract_id=contract.id) }}">
+  {% for section_key, section in contract.content_json.items() %}
+    <section class="contract-section" data-section="{{ section_key }}">
+      <h3>{{ section['title'] }}</h3>
+      {% for field_key, field in section['fields'].items() %}
+        <div class="contract-field" data-field="{{ field_key }}" data-type="{{ field['type'] }}">
+          <div class="field-heading">
+            <label>{{ field['label'] }}</label>
+            <span class="provenance">{{ provenance_labels.get(field['provenance'], field['provenance']|replace('_', ' ')|title) }}</span>
+          </div>
+          {% if field['type'] == 'list' %}
+            <div class="contract-list">
+              {% for item in field['items'] %}
+                <div class="contract-list-item" data-item-id="{{ item.id }}">
+                  <textarea rows="2" data-item-text>{{ item.text }}</textarea>
+                  <input type="hidden" data-item-provenance value="{{ item.provenance }}">
+                  <button class="icon-button" type="button" data-remove-item aria-label="Remove item" title="Remove item">x</button>
+                </div>
+              {% endfor %}
+            </div>
+            <button class="button small" type="button" data-add-item>Add item</button>
+          {% else %}
+            <textarea rows="4" data-field-value>{{ field['value'] }}</textarea>
+          {% endif %}
+          <input type="hidden" data-provenance value="{{ field['provenance'] }}">
+          <input type="hidden" data-label value="{{ field['label'] }}">
+        </div>
+      {% endfor %}
+    </section>
+  {% endfor %}
+</form>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/contract.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block body_class %}project-shell-body{% endblock %}
+{% block main_class %}project-page{% endblock %}
+{% set brief_nav_sections = ['simple', 'sources', 'synthesis', 'contract', 'reviews'] %}
+{% set nav_items = [
+  ('overview', 'Overview', url_for('main.project_overview', project_id=project.id), section == 'overview'),
+  ('brief', 'Brief', url_for('main.project_simple', project_id=project.id), section in brief_nav_sections),
+  ('workflow', 'Workflow', url_for('main.workflow_page', project_id=project.id), section == 'workflow'),
+  ('export', 'Export', url_for('main.export_page', project_id=project.id), section == 'export')
+] %}
+{% set section_labels = {
+  'simple': 'Brief',
+  'export': 'Export',
+  'workflow': 'Workflow',
+  'sources': 'Background Info',
+  'synthesis': 'Key Details',
+  'contract': 'Build Instructions',
+  'reviews': 'Quality Check',
+  'overview': 'Overview'
+} %}
+{% block body_header %}
+<aside class="app-rail project-rail" aria-label="Agent navigation">
+  <a class="rail-brand" href="{{ url_for('main.projects') }}" aria-label="UAX Studio agents">
+    <img src="{{ url_for('static', filename='icons/ax-mark.svg') }}" alt="" width="32" height="32">
+    <span class="app-rail-label">
+      <strong>UAX Studio</strong>
+      <small>Agent workspace</small>
+    </span>
+  </a>
+
+  <div class="rail-project-context">
+    <a href="{{ url_for('main.projects') }}">&#9664; Back to Agents</a>
+  </div>
+
+  <nav class="rail-nav" aria-label="Agent">
+    {% for key, label, href, active in nav_items %}
+      <a class="{{ 'active' if active else '' }}" href="{{ href }}" {% if active %}aria-current="page"{% endif %}>
+
+        <span class="app-rail-label">{{ label }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
+</aside>
+{% endblock %}
+{% block content %}
+<section class="workspace project-workspace" aria-labelledby="workspace-title">
+  {% block workspace_header %}
+  <header class="workspace-header builder-workspace-header">
+    <div>
+      <h2 id="workspace-title">{{ project.name }}</h2>
+      <div class="workspace-subheader" aria-label="Workspace details">
+        <span><strong>Status</strong>{{ brief_health.status_label }}</span>
+        <span><strong>Progress</strong>{{ brief_health.percent }}% complete</span>
+      </div>
+      {% block workspace_intro %}{% endblock %}
+    </div>
+  </header>
+  {% endblock %}
+  {% block workspace %}{% endblock %}
+</section>
+{% endblock %}

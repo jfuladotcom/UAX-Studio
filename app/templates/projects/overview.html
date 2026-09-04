@@ -1,0 +1,82 @@
+{% extends "projects/shell.html" %}
+{% block title %}{{ project.name }} - Overview{% endblock %}
+{% block workspace_title %}Overview{% endblock %}
+{% block workspace %}
+<div class="overview-grid">
+  <section class="panel">
+    <h3>Summary</h3>
+    <dl class="detail-list">
+      <div><dt>Build type</dt><dd>{{ project.workflow_name or 'Not specified' }}</dd></div>
+      <div><dt>Target user</dt><dd>{{ project.target_user or 'Not specified' }}</dd></div>
+      <div><dt>Outcome</dt><dd>{{ project.desired_outcome or 'Not specified' }}</dd></div>
+      <div><dt>Updated</dt><dd>{{ project.updated_at|datetime_local }}</dd></div>
+    </dl>
+  </section>
+  <section class="panel overview-health {{ brief_health.status_key }}">
+    <h3>Brief health</h3>
+    <span class="health-badge {{ brief_health.status_key }}">{{ brief_health.status_label }}</span>
+    <ul class="check-list">
+      {% for check in brief_health.required_checks %}
+        <li class="{{ 'done' if check.complete else 'needs-attention' }}"><span aria-hidden="true">{{ 'Done' if check.complete else 'Needs attention' }}</span>{{ check.label }}</li>
+      {% endfor %}
+    </ul>
+    <p class="callout">{{ brief_health.summary }}</p>
+    {% if brief_health.issue_count %}
+      <button class="button primary" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <h3>Open questions</h3>
+    {% if open_questions %}
+      <ul class="plain-list">
+        {% for item in open_questions[:6] %}
+          <li>{{ item.text }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="quiet">No open questions recorded yet.</p>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <h3>High-priority quality notes</h3>
+    {% if high_findings %}
+      <ul class="plain-list">
+        {% for finding in high_findings[:6] %}
+          <li><strong>{{ finding.severity|title }}:</strong> {{ finding.title }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="quiet">No open high-priority quality notes.</p>
+    {% endif %}
+  </section>
+  <section class="panel span-2">
+    <h3>Recent activity</h3>
+    {% if project.activity_events %}
+      <div class="activity-list">
+        {% for event in project.activity_events[:8] %}
+          <article>
+            <time>{{ event.created_at|datetime_local }}</time>
+            <span>{{ event.summary }}</span>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="quiet">Activity appears here as you work.</p>
+    {% endif %}
+  </section>
+  <section class="panel danger-zone span-2">
+    <h3>Danger area</h3>
+    <p>Permanently deleting removes the agent, uploads, and export packages from UAX Studio's configured data folders.</p>
+    <form method="post" action="{{ url_for('main.delete_project_route', project_id=project.id) }}" data-confirm="Permanently delete this agent? This cannot be undone.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Type agent name to delete
+        <input name="confirm_name" autocomplete="off">
+      </label>
+      <button class="button danger" type="submit">Permanent delete</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/attention.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}UAX Studio{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/ax-mark.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block head %}{% endblock %}
+  </head>
+  <body class="{% block body_class %}app-shell-body{% endblock %}{% if reduced_motion %} reduced-motion{% endif %}">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    {% block body_header %}
+    {% set projects_active = request.endpoint in ['main.projects'] %}
+    {% set new_active = request.endpoint in ['main.index', 'main.simple_mode_page'] %}
+    {% set settings_active = request.endpoint == 'main.settings_page' %}
+    <aside class="app-rail global-rail" aria-label="UAX Studio navigation">
+      <a class="rail-brand" href="{{ url_for('main.projects') }}" aria-label="UAX Studio agents">
+        <img src="{{ url_for('static', filename='icons/ax-mark.svg') }}" alt="" width="32" height="32">
+        <span class="app-rail-label">
+          <strong>UAX Studio</strong>
+          <small>Local agents</small>
+        </span>
+      </a>
+      <nav class="rail-nav" aria-label="Primary">
+        <a class="{{ 'active' if projects_active else '' }}" href="{{ url_for('main.projects') }}" {% if projects_active %}aria-current="page"{% endif %}>
+          <span aria-hidden="true">&#128372;</span>
+          <span class="app-rail-label">Agents</span>
+        </a>
+        <a class="{{ 'active' if new_active else '' }}" href="{{ url_for('main.simple_mode_page') }}" {% if new_active %}aria-current="page"{% endif %}>
+          <span aria-hidden="true">&#127110;</span>
+          <span class="app-rail-label">New agent</span>
+        </a>
+        <a class="{{ 'active' if settings_active else '' }}" href="{{ url_for('main.settings_page') }}" {% if settings_active %}aria-current="page"{% endif %}>
+          <span aria-hidden="true">&#128296;</span>
+          <span class="app-rail-label">Settings</span>
+        </a>
+      </nav>
+      <!-- <div class="rail-footer">
+        <span class="rail-status success"><span aria-hidden="true">OK</span><span class="app-rail-label">Local and private</span></span>
+        <button class="rail-collapse" type="button" data-rail-toggle aria-label="Collapse navigation">Collapse</button>
+      </div> -->
+    </aside>
+    {% endblock %}
+
+    <div class="flash-stack" aria-live="polite">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="loading-indicator" data-loading-indicator role="status" aria-live="polite" aria-atomic="true" hidden>
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span data-loading-message>Working...</span>
+    </div>
+
+    <main id="main" class="{% block main_class %}page{% endblock %}" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    <div id="live-region" class="sr-only" aria-live="polite"></div>
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,4 @@
+UAX Studio database migrations
+
+Run upgrades with `flask --app run.py db upgrade` or the `init-db` command.
+The application also applies pending migrations during local startup.

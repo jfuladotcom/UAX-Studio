@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Settings - UAX Studio{% endblock %}
+{% block content %}
+<section class="page-header settings-header">
+  <div>
+    <p class="eyebrow">Settings</p>
+    <h1>Studio settings</h1>
+    <p class="workspace-intro">Choose the drafting helper, keep local storage paths visible, and control comfort settings for this device.</p>
+  </div>
+  <!-- <a class="button" href="{{ url_for('main.projects') }}">Back to agents</a> -->
+</section>
+
+<form
+  id="settings-form"
+  class="settings-shell"
+  data-ollama-base-url="{{ settings.ollama_base_url }}"
+  data-ollama-timeout="{{ settings.ollama_timeout }}"
+>
+  <section class="settings-section">
+    <header>
+      <p class="eyebrow">AI model</p>
+      <h2>Drafting assistant</h2>
+      <p>Use the built-in deterministic helper, or connect to a local Ollama model for richer brief drafting.</p>
+    </header>
+    <div class="settings-fields stacked-form">
+      <label>Drafting option
+        <select name="provider_choice" id="active-provider">
+          <option value="deterministic" {{ 'selected' if selected_provider == 'deterministic' else '' }}>Built-in draft helper</option>
+          {% for model in ollama_models %}
+            <option value="{{ ollama_provider_prefix }}{{ model }}" {{ 'selected' if selected_provider == ollama_provider_prefix ~ model else '' }}>Ollama: {{ model }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <p class="quiet" id="model-status" aria-live="polite">
+      {% if ollama_models %}
+        {{ ollama_models|length }} local Ollama model{{ 's' if ollama_models|length != 1 else '' }} detected.
+      {% else %}
+        No local Ollama models detected. The built-in draft helper is active.
+      {% endif %}
+    </p>
+    <div class="action-row">
+      <button class="button primary" type="submit">Save settings</button>
+      <button class="button" type="button" id="test-local-models">Test local models</button>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <header>
+      <p class="eyebrow">Storage and privacy</p>
+      <h2>Local files</h2>
+      <p>Uploads, drafts, and exports stay on this machine unless you move them elsewhere.</p>
+    </header>
+    <div class="settings-fields stacked-form">
+      <label>Data directory
+        <input name="data_dir" value="{{ settings.data_dir }}">
+      </label>
+      <label>Export directory
+        <input name="export_dir" value="{{ settings.export_dir }}">
+      </label>
+    </div>
+    <p class="quiet">Uploaded files stay inside an uploads folder in the data directory.</p>
+  </section>
+
+  <section class="settings-section">
+    <header>
+      <p class="eyebrow">Accessibility</p>
+      <h2>Motion preference</h2>
+      <p>Use this when you want calmer transitions throughout the workspace.</p>
+    </header>
+    <label class="checkbox-label">
+      <input type="checkbox" name="reduced_motion" {{ 'checked' if settings.reduced_motion else '' }}>
+      Prefer reduced motion
+    </label>
+  </section>
+
+  <section class="settings-section danger-zone">
+    <header>
+      <p class="eyebrow">Danger zone</p>
+      <h2>Demo data</h2>
+      <p>Restore the GalleryFlow demo to its seeded state. Your other agents are not part of the demo reset.</p>
+    </header>
+    <button class="button danger" type="button" id="reset-demo" data-url="{{ url_for('main.reset_demo_api') }}">Reset demo agent</button>
+  </section>
+</form>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}
