@@ -28,6 +28,8 @@ class ExtractedItem(BaseModel):
         "constraints",
         "assumptions",
         "risks",
+        "integrations",
+        "data_needs",
         "open_questions",
     ]
     text: str = Field(min_length=1)

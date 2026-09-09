@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.extensions import db
 from app.models import Workflow, WorkflowEdge, WorkflowNode, utcnow
+from app.services.display_service import current_ui_copy
 
 NODE_TYPES = [
     "start",
@@ -44,7 +45,7 @@ def edge_to_dict(edge: WorkflowEdge) -> dict:
         "id": edge.id,
         "source_node_id": edge.source_node_id,
         "target_node_id": edge.target_node_id,
-        "condition_label": edge.condition_label,
+        "condition_label": current_ui_copy(edge.condition_label),
         "priority": edge.priority,
         "is_default": edge.is_default,
     }

@@ -4,6 +4,8 @@ import copy
 from collections.abc import Mapping
 from uuid import uuid4
 
+from app.services.display_service import current_ui_copy
+
 CONTRACT_BLUEPRINT = {
     "product_intent": {
         "title": "Product intent",
@@ -15,6 +17,8 @@ CONTRACT_BLUEPRINT = {
             "business_objective": {"label": "Business objective", "type": "text"},
             "success_measures": {"label": "Success measures", "type": "list"},
             "known_constraints": {"label": "Known constraints", "type": "list"},
+            "risks": {"label": "Risks", "type": "list"},
+            "assumptions": {"label": "Unresolved assumptions", "type": "list"},
         },
     },
     "build_target": {
@@ -176,7 +180,7 @@ def ensure_contract_shape(content: dict | None, provenance: str = "user_written"
                 fields[field_key]["items"] = [
                     {
                         "id": item.get("id") or str(uuid4()),
-                        "text": item.get("text", ""),
+                        "text": current_ui_copy(item.get("text", "")),
                         "provenance": item.get("provenance") or provenance,
                     }
                     for item in old_items
@@ -186,7 +190,7 @@ def ensure_contract_shape(content: dict | None, provenance: str = "user_written"
                 ]
             else:
                 value = old_field.get("value", "")
-                fields[field_key]["value"] = value if isinstance(value, str) else ""
+                fields[field_key]["value"] = current_ui_copy(value) if isinstance(value, str) else ""
     return shaped
 
 

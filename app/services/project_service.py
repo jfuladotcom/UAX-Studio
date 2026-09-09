@@ -28,7 +28,6 @@ from app.services.security import remove_tree_safely, slugify
 STAGES = [
     "draft",
     "sources_ready",
-    "synthesis_ready",
     "contract_defined",
     "workflow_ready",
     "reviewed",
@@ -91,8 +90,6 @@ def update_project_stage(project: Project) -> str:
     stage = "draft"
     if project.source_documents:
         stage = "sources_ready"
-    if any(item.inclusion_status == "included" for item in project.synthesis_items):
-        stage = "synthesis_ready"
     contract = project.active_contract
     if contract and _contract_has_content(contract):
         stage = "contract_defined"
@@ -111,7 +108,6 @@ def update_project_stage(project: Project) -> str:
 def completion(project: Project) -> dict:
     checks = [
         ("Idea or background added", bool(project.source_documents)),
-        ("Key details ready", any(item.inclusion_status == "included" for item in project.synthesis_items)),
         ("Build instructions drafted", bool(project.active_contract and _contract_has_content(project.active_contract))),
         (
             "Step map connected",
@@ -246,86 +242,6 @@ def brief_health(project: Project) -> dict:
         "required_count": len(required_issues),
         "advisory_count": len(advisory_issues),
     }
-
-
-def brief_review_sections(project: Project) -> list[dict]:
-    contract = ensure_contract_shape(project.active_contract.content_json if project.active_contract else {})
-    return [
-        {
-            "title": "Product foundation",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Project type", _project_type(project, contract), "from_input" if project.workflow_name and project.workflow_name != "Build plan" else _field_state(contract, "build_target", "artifact_type")),
-                _decision("Problem statement", _contract_text(contract, "product_intent", "problem_statement"), _field_state(contract, "product_intent", "problem_statement")),
-                _decision("Desired outcome", project.desired_outcome or _contract_text(contract, "product_intent", "desired_outcome"), "from_input" if project.desired_outcome else _field_state(contract, "product_intent", "desired_outcome")),
-            ],
-        },
-        {
-            "title": "Audience and user outcomes",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Primary audience", project.target_user or _contract_text(contract, "product_intent", "target_user"), "from_input" if project.target_user else _field_state(contract, "product_intent", "target_user")),
-                _decision("User goal", _contract_text(contract, "product_intent", "user_goal"), _field_state(contract, "product_intent", "user_goal")),
-                _decision("Success measures", _contract_list_values(contract, "product_intent", "success_measures"), _field_state(contract, "product_intent", "success_measures")),
-            ],
-        },
-        {
-            "title": "Core experience and features",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Core features", _contract_list_values(contract, "build_target", "core_features") or _synthesis_texts(project, "requirements"), _field_state(contract, "build_target", "core_features")),
-                _decision("Screens, pages, or surfaces", _contract_list_values(contract, "build_target", "primary_surfaces"), _field_state(contract, "build_target", "primary_surfaces")),
-                _decision("Implementation steps", _contract_list_values(contract, "implementation_plan", "implementation_steps"), _field_state(contract, "implementation_plan", "implementation_steps")),
-            ],
-        },
-        {
-            "title": "Data and integrations",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Data models or content", _contract_list_values(contract, "build_target", "data_entities"), _field_state(contract, "build_target", "data_entities")),
-                _decision("Integrations", _contract_list_values(contract, "build_target", "integrations"), _field_state(contract, "build_target", "integrations")),
-                _decision("Permissions and roles", _contract_list_values(contract, "build_target", "auth_and_roles"), _field_state(contract, "build_target", "auth_and_roles")),
-            ],
-        },
-        {
-            "title": "Constraints and risks",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Known constraints", _contract_list_values(contract, "product_intent", "known_constraints"), _field_state(contract, "product_intent", "known_constraints")),
-                _decision("Out of scope", _contract_list_values(contract, "implementation_plan", "out_of_scope"), _field_state(contract, "implementation_plan", "out_of_scope")),
-                _decision("Open questions", _contract_list_values(contract, "definition_of_done", "open_questions"), _field_state(contract, "definition_of_done", "open_questions")),
-            ],
-        },
-        {
-            "title": "Acceptance criteria",
-            "edit_target": "contract",
-            "decisions": [
-                _decision("Functional acceptance", _contract_list_values(contract, "definition_of_done", "functional_acceptance_criteria"), _field_state(contract, "definition_of_done", "functional_acceptance_criteria")),
-                _decision("UX acceptance", _contract_list_values(contract, "definition_of_done", "ux_acceptance_criteria"), _field_state(contract, "definition_of_done", "ux_acceptance_criteria")),
-                _decision("Builder instructions", _contract_text(contract, "implementation_plan", "ai_builder_instructions"), _field_state(contract, "implementation_plan", "ai_builder_instructions")),
-            ],
-        },
-    ]
-
-
-def workflow_attention_node(project: Project) -> WorkflowNode | None:
-    workflow = project.active_workflow
-    if not workflow or not workflow.nodes:
-        return None
-
-    node_ids = {node.id for node in workflow.nodes}
-    finding_node = _finding_attention_node(project, node_ids)
-    if finding_node:
-        return finding_node
-
-    incomplete = next((node for node in workflow.nodes if _workflow_node_needs_detail(node)), None)
-    if incomplete:
-        return incomplete
-
-    health = brief_health(project)
-    if health["required_issues"] or health["advisory_issues"]:
-        return max(workflow.nodes, key=_workflow_attention_score)
-    return workflow.nodes[0]
 
 
 def auto_correct_attention(project: Project) -> dict:
@@ -891,21 +807,6 @@ def _contract_has_content(contract: ExperienceContract) -> bool:
     return False
 
 
-def _finding_attention_node(project: Project, node_ids: set[str]) -> WorkflowNode | None:
-    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "observation": 4}
-    open_findings = sorted(
-        (finding for finding in project.findings if finding.status == "open" and finding.related_workflow_node_id),
-        key=lambda finding: severity_order.get(finding.severity, 5),
-    )
-    for finding in open_findings:
-        if finding.related_workflow_node_id not in node_ids:
-            continue
-        node = db.session.get(WorkflowNode, finding.related_workflow_node_id)
-        if node:
-            return node
-    return None
-
-
 def _workflow_node_needs_detail(node: WorkflowNode) -> bool:
     config = node.configuration_json or {}
     required_fields = [
@@ -921,85 +822,12 @@ def _workflow_node_needs_detail(node: WorkflowNode) -> bool:
     return any(not str(value or "").strip() for value in required_fields)
 
 
-def _workflow_attention_score(node: WorkflowNode) -> int:
-    config = node.configuration_json or {}
-    text = " ".join(
-        str(value or "")
-        for value in [
-            node.label,
-            node.description,
-            node.actor,
-            config.get("expected_input", ""),
-            config.get("expected_output", ""),
-            config.get("confidence_behavior", ""),
-            config.get("user_visible_status", ""),
-            config.get("recovery_behavior", ""),
-        ]
-    ).lower()
-    score = 0
-    weighted_terms = {
-        "missing": 10,
-        "clarif": 9,
-        "resolve": 8,
-        "recovery": 8,
-        "review": 7,
-        "risk": 6,
-        "conflict": 6,
-        "edit": 5,
-        "human": 4,
-        "confidence": 3,
-    }
-    for term, weight in weighted_terms.items():
-        if term in text:
-            score += weight
-    if node.node_type in {"escalation", "decision", "confidence_check", "user_action"}:
-        score += 4
-    return score
-
-
 def _health_check(key: str, label: str, value) -> dict:
     if isinstance(value, str):
         complete = bool(value.strip())
     else:
         complete = bool(value)
     return {"key": key, "label": label, "complete": complete}
-
-
-def _decision(label: str, value, state: str) -> dict:
-    items = value if isinstance(value, list) else []
-    text = "" if isinstance(value, list) else str(value or "").strip()
-    if not items and not text:
-        state = "missing"
-    state_labels = {
-        "from_input": "From your input",
-        "user_confirmed": "User confirmed",
-        "ai_draft": "AI draft",
-        "missing": "Missing",
-    }
-    source_labels = {
-        "from_input": "Directly supplied by the project brief.",
-        "user_confirmed": "Edited or confirmed in UAX Studio.",
-        "ai_draft": "Suggested by the draft helper.",
-        "missing": "No value has been captured yet.",
-    }
-    return {
-        "label": label,
-        "text": text,
-        "items": items,
-        "state": state,
-        "state_label": state_labels.get(state, "Needs review"),
-        "source": source_labels.get(state, "Generated or inferred detail."),
-    }
-
-
-def _field_state(contract: dict, section_key: str, field_key: str) -> str:
-    field = contract.get(section_key, {}).get("fields", {}).get(field_key, {})
-    if field.get("type") == "list":
-        if not _contract_list_values(contract, section_key, field_key):
-            return "missing"
-    elif not field.get("value", "").strip():
-        return "missing"
-    return "user_confirmed" if field.get("provenance") == "user_written" else "ai_draft"
 
 
 def _project_type(project: Project, contract: dict) -> str:

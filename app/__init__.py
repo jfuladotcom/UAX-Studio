@@ -60,6 +60,10 @@ def _set_sqlite_pragma(dbapi_connection, _connection_record):
 
 
 def register_template_helpers(app: Flask) -> None:
+    from app.services.display_service import current_ui_copy
+
+    app.add_template_filter(current_ui_copy)
+
     @app.context_processor
     def inject_globals():
         token = session.setdefault("csrf_token", __import__("secrets").token_urlsafe(32))

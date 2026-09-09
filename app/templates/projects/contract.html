@@ -9,7 +9,7 @@
   'demo_seeded': 'Demo Detail'
 } %}
 <section class="toolbar-strip">
-  <button class="button primary" data-contract-suggest="{{ url_for('main.suggest_contract_api', contract_id=contract.id) }}">Suggest instructions</button>
+  <button class="button primary" type="button" data-generate-instructions="{{ url_for('main.suggest_contract_api', contract_id=contract.id) }}">Generate Build Instructions</button>
   <button class="button" data-contract-version="{{ url_for('main.create_contract_version_api', contract_id=contract.id) }}">Save version</button>
   <label>View version
     <select id="contract-version-view">
@@ -55,4 +55,5 @@
 {% endblock %}
 {% block scripts %}
 <script type="module" src="{{ url_for('static', filename='js/contract.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/build-instructions.js') }}"></script>
 {% endblock %}

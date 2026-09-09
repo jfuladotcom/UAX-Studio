@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Protocol, TypeVar
 
 import requests
@@ -111,9 +112,36 @@ class DeterministicDemoProvider:
                 ("requirements", "The exported Markdown should tell an AI builder what to build, what to avoid, and how success will be verified.", "Inference", True, "medium"),
                 ("requirements", "Keep any AI or agent behavior explicit, reviewable, and tied to the user's stated outcome.", "Inference", True, "medium"),
                 ("constraints", "The initial brief may omit platform, data model, integration, auth, or deployment decisions.", "Inference", True, "medium"),
+                ("assumptions", "The proposed scope and implementation choices still need user review.", "Inference", True, "medium"),
                 ("risks", "A vague build brief can cause an AI builder to implement the wrong product or invent missing requirements.", "Inference", True, "medium"),
                 ("open_questions", "What build type, platform, data model, integrations, and launch constraints should be locked before implementation?", "Inference", True, "medium"),
             ]
+        # Preserve explicit facts throughout every document, including material
+        # after the short summary used by the built-in draft helper.
+        categories = {
+            "users": r"\b(users?|audience|customers?|staff)\b",
+            "goals": r"\b(goals?|outcomes?|aims?)\b",
+            "requirements": r"\b(requirements?|features?|must|needs?|should|shall)\b",
+            "constraints": r"\b(constraints?|limits?|must not|cannot|budget|deadline|only)\b",
+            "risks": r"\b(risks?|failure|conflict)\b",
+            "assumptions": r"\b(assumptions?|assume|assuming)\b",
+            "integrations": r"\b(integrations?|integrate|api|webhook|connect to)\b",
+            "data_needs": r"\b(data|database|records?|store|storage|entities)\b",
+        }
+        for number, sentence in enumerate(re.split(r"\n+|(?<=[.!?])\s+", text), start=1):
+            sentence = sentence.strip(" \t-*#")
+            if not sentence:
+                continue
+            if "?" in sentence or re.search(r"\b(open question|unanswered|unknown|tbd)\b", sentence, re.I):
+                matches = ["open_questions"]
+            elif re.search(categories["assumptions"], sentence, re.I):
+                matches = ["assumptions"]
+            elif re.search(categories["risks"], sentence, re.I):
+                matches = ["risks"]
+            else:
+                matches = [key for key, pattern in categories.items() if re.search(pattern, sentence, re.I)]
+            for category in matches:
+                items.append((category, sentence, f"Source: statement {number}", category == "assumptions", "high"))
         return {
             "label": "Draft suggestions from the built-in helper",
             "items": [
@@ -411,7 +439,7 @@ class DeterministicDemoProvider:
             "functional_acceptance_criteria",
             [
                 "Files extract into editable project sources.",
-                "Included synthesis informs contract suggestions.",
+                "Saved background information informs Build Instructions.",
                 "Workflow details cover review points and failure paths.",
                 "Exports include Markdown, JSON, Mermaid, manifest, and AI_BUILD_BRIEF.md.",
             ],
@@ -702,7 +730,7 @@ class DeterministicDemoProvider:
             "definition_of_done",
             "functional_acceptance_criteria",
             [
-                "Source material creates editable synthesis.",
+                "Saved background information guides the build draft.",
                 "The build contract includes target artifact, features, surfaces, data, and acceptance checks.",
                 "Export includes AI_BUILD_BRIEF.md, contract, workflow, and acceptance criteria.",
             ],
@@ -797,10 +825,7 @@ class OllamaProvider:
             repaired = self._repair(response_model, str(exc), locals().get("raw_text", ""))
             if repaired is not None:
                 return repaired
-            raise ProviderFailure(
-                f"Ollama did not return valid structured output: {exc}",
-                locals().get("raw_text", ""),
-            ) from exc
+            raise ProviderFailure(f"Ollama did not return valid structured output: {exc}", locals().get("raw_text", "")) from exc
 
     def _repair(self, response_model: type[T], error: str, raw_text: str) -> T | None:
         prompt = build_repair_prompt(validation_error=error, raw_text=raw_text)

@@ -3,29 +3,11 @@ from __future__ import annotations
 from uuid import uuid4
 
 from app.extensions import db
-from app.models import (
-    Project,
-    SourceDocument,
-    SynthesisItem,
-    Workflow,
-    WorkflowEdge,
-    WorkflowNode,
-    utcnow,
-)
-from app.schemas import ContractSuggestion, ProviderFailure, SynthesisResult, dump_model
-from app.services.contract_service import ensure_contract_shape, merge_contract_suggestions
+from app.models import Project, SourceDocument, Workflow, WorkflowEdge, WorkflowNode, utcnow
+from app.services.build_instructions_service import generate_build_instructions
+from app.services.contract_service import ensure_contract_shape
 from app.services.extraction import normalize_pasted_text, preview_jsonish_text
 from app.services.project_service import create_project, record_activity, update_project_stage
-from app.services.prompt_service import get_prompt
-from app.services.providers import DeterministicDemoProvider, get_provider
-
-SIMPLE_SUMMARY_SECTIONS = [
-    ("build_target", "What to build"),
-    ("core_features", "Core features"),
-    ("surfaces", "Pages or screens"),
-    ("data", "Data or content"),
-    ("done", "Done when"),
-]
 
 
 def create_simple_project(
@@ -75,15 +57,9 @@ def create_simple_project(
     db.session.add(source)
     db.session.flush()
 
-    synthesis, synthesis_provider, synthesis_notice = _generate_synthesis(context_text)
-    _replace_synthesis(project, source, synthesis)
-    _fill_project_summary(project)
-
-    contract, contract_provider, contract_notice = _generate_contract(_included_synthesis_context(project) or context_text)
     active_contract = project.active_contract
-    active_contract.content_json = merge_contract_suggestions(
-        active_contract.content_json or {}, dump_model(contract)["content_json"]
-    )
+    generation = generate_build_instructions(active_contract)
+    _fill_project_summary(project)
     active_contract.content_json = _apply_simple_build_defaults(
         ensure_contract_shape(active_contract.content_json),
         build_type,
@@ -95,10 +71,8 @@ def create_simple_project(
 
     _seed_simple_workflow(project)
 
-    provider_names = [synthesis_provider]
-    if contract_provider != synthesis_provider:
-        provider_names.append(contract_provider)
-    notice = " ".join(item for item in [synthesis_notice, contract_notice] if item).strip()
+    provider_names = generation["providers"]
+    notice = generation["notice"]
     record_activity(
         project,
         "simple_mode_draft_created",
@@ -107,76 +81,6 @@ def create_simple_project(
     )
     update_project_stage(project)
     return {"project": project, "providers": provider_names, "notice": notice}
-
-
-def simple_project_snapshot(project: Project) -> dict:
-    return {
-        "synthesis": _group_synthesis(project),
-        "contract": _contract_summary(project),
-        "workflow_nodes": list(project.active_workflow.nodes) if project.active_workflow else [],
-    }
-
-
-def _generate_synthesis(text: str) -> tuple[SynthesisResult, str, str]:
-    provider = get_provider()
-    try:
-        result = provider.generate_structured(
-            task_name="intake_synthesis",
-            system_prompt=get_prompt("simple_mode_synthesis"),
-            user_prompt=text,
-            response_model=SynthesisResult,
-        )
-        return result, provider.name, ""
-    except ProviderFailure as exc:
-        fallback = DeterministicDemoProvider()
-        result = fallback.generate_structured(
-            task_name="intake_synthesis",
-            system_prompt=get_prompt("fallback_simple_mode_synthesis"),
-            user_prompt=text,
-            response_model=SynthesisResult,
-        )
-        return result, fallback.name, f"{exc.message} The built-in draft helper was used for key details instead."
-
-
-def _generate_contract(context: str) -> tuple[ContractSuggestion, str, str]:
-    provider = get_provider()
-    try:
-        result = provider.generate_structured(
-            task_name="contract_suggestions",
-            system_prompt=get_prompt("simple_mode_contract_suggestions"),
-            user_prompt=context,
-            response_model=ContractSuggestion,
-        )
-        return result, provider.name, ""
-    except ProviderFailure as exc:
-        fallback = DeterministicDemoProvider()
-        result = fallback.generate_structured(
-            task_name="contract_suggestions",
-            system_prompt=get_prompt("fallback_simple_mode_contract"),
-            user_prompt=context,
-            response_model=ContractSuggestion,
-        )
-        return result, fallback.name, f"{exc.message} The built-in draft helper was used for build instructions instead."
-
-
-def _replace_synthesis(project: Project, source: SourceDocument, synthesis: SynthesisResult) -> None:
-    for item in list(project.synthesis_items):
-        db.session.delete(item)
-    db.session.flush()
-    for item in dump_model(synthesis)["items"]:
-        db.session.add(
-            SynthesisItem(
-                project=project,
-                category=item["category"],
-                text=item["text"],
-                source_document=source if not item["is_inference"] else None,
-                source_locator=item["source_reference"],
-                is_inference=item["is_inference"],
-                confidence=item["confidence"],
-                inclusion_status="included",
-            )
-        )
-    db.session.flush()
 
 
 def _fill_project_summary(project: Project) -> None:
@@ -203,14 +107,6 @@ def _first_synthesis_text(project: Project, category: str) -> str:
         None,
     )
     return item.text if item else ""
-
-
-def _included_synthesis_context(project: Project) -> str:
-    return "\n".join(
-        item.text
-        for item in project.synthesis_items
-        if item.inclusion_status == "included"
-    )
 
 
 def _seed_simple_workflow(project: Project) -> None:
@@ -300,7 +196,7 @@ def _seed_simple_workflow(project: Project) -> None:
     )
 
     _workflow_edge(workflow, start, draft, "Begin", 1, True)
-    _workflow_edge(workflow, draft, confidence, "Key details ready", 1, True)
+    _workflow_edge(workflow, draft, confidence, "Draft ready", 1, True)
     _workflow_edge(workflow, confidence, review, "Build-ready enough", 1, True)
     _workflow_edge(workflow, confidence, recovery, "Missing or risky build detail", 2)
     _workflow_edge(workflow, review, complete, "Ready", 1, True)
@@ -364,62 +260,6 @@ def _workflow_edge(
             is_default=default,
         )
     )
-
-
-def _group_synthesis(project: Project) -> list[dict]:
-    labels = {
-        "users": "Users",
-        "goals": "Goals",
-        "tasks": "Build steps",
-        "requirements": "Must haves",
-        "constraints": "Limits",
-        "risks": "Risks",
-        "open_questions": "Open questions",
-    }
-    grouped = []
-    for key, label in labels.items():
-        items = [
-            item
-            for item in project.synthesis_items
-            if item.category == key and item.inclusion_status == "included"
-        ]
-        if items:
-            grouped.append({"key": key, "label": label, "items": items[:4]})
-    return grouped
-
-
-def _contract_summary(project: Project) -> list[dict]:
-    contract = project.active_contract.content_json if project.active_contract else {}
-    return [
-        {
-            "key": "build_target",
-            "label": "What to build",
-            "items": _contract_list(contract, "build_target", "artifact_type")[:4],
-        },
-        {
-            "key": "core_features",
-            "label": "Core features",
-            "items": _contract_list(contract, "build_target", "core_features")[:4],
-        },
-        {
-            "key": "surfaces",
-            "label": "Pages or screens",
-            "items": _contract_list(contract, "build_target", "primary_surfaces")[:4],
-        },
-        {
-            "key": "data",
-            "label": "Data or content",
-            "items": _contract_list(contract, "build_target", "data_entities")[:4],
-        },
-        {
-            "key": "done",
-            "label": "Done when",
-            "items": (
-                _contract_list(contract, "implementation_plan", "acceptance_tests")
-                or _contract_list(contract, "definition_of_done", "functional_acceptance_criteria")
-            )[:4],
-        },
-    ]
 
 
 def _contract_list(contract: dict, section_key: str, field_key: str) -> list[str]:

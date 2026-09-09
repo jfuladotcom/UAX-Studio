@@ -1,1 +1,3 @@
-Draft an editable Build Contract from included synthesis, including implementation details and any agent guardrails required by the target product.
+Draft editable Build Instructions from all supplied Background Information and analyzed background, including implementation details and any agent guardrails required by the target product.
+
+Preserve users and goals, requirements and features, constraints, risks, assumptions, integrations and data needs, and unanswered questions. Put unresolved assumptions in product_intent.fields.assumptions, risks in product_intent.fields.risks, and unanswered questions in definition_of_done.fields.open_questions, using list fields. Keep uncertainty visible and never silently resolve it. Describe the user's target product using plain language. Do not expose internal processing or schema names in generated text.

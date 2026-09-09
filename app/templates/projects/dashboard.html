@@ -5,7 +5,7 @@
   <div>
     <p class="eyebrow">Agents</p>
     <h1>Agents</h1>
-    <p class="workspace-intro">Find a saved agent, understand its current state, and continue where you left off.</p>
+    <p class="workspace-intro">Find a saved agent, understand its current state, and open its Overview.</p>
   </div>
 </section>
 
@@ -47,7 +47,7 @@
           data-search="{{ project.name }} {{ project.description }} {{ project.workflow_name }} {{ project.target_user }} {{ project.desired_outcome }}"
         >
           <div class="agent-card-main">
-            <h3><a href="{{ url_for('main.project_simple', project_id=project.id) }}">{{ project.name }}</a></h3>
+            <h3><a href="{{ url_for('main.project_overview', project_id=project.id) }}">{{ project.name }}</a></h3>
             <p>{{ project.description or project.desired_outcome or 'No purpose captured yet.' }}</p>
           </div>
           <div class="agent-card-state">
@@ -59,7 +59,7 @@
             {% if health.issue_count %}
               <button class="button small" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
             {% endif %}
-            <a class="button primary" href="{{ url_for('main.project_simple', project_id=project.id) }}">Open agent</a>
+            <a class="button primary" href="{{ url_for('main.project_overview', project_id=project.id) }}">Open agent</a>
             <details class="overflow-menu">
               <summary aria-label="Agent actions">More</summary>
               <div>

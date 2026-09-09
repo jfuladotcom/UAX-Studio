@@ -1,0 +1,27 @@
+{% for module in brief_modules %}
+  <section class="brief-section{{ ' original-idea' if module.key == 'original_idea' else '' }}" data-brief-module="{{ module.key }}" aria-labelledby="brief-heading-{{ module.key }}">
+    <div class="brief-section-heading">
+      <h2 id="brief-heading-{{ module.key }}">{{ module.title }}</h2>
+      <button class="button small" type="button" data-edit-section="{{ module.key }}" data-section-title="{{ module.title }}" data-section-url="{{ url_for('main.brief_section_api', project_id=project.id, section_key=module.key) }}" aria-haspopup="dialog" aria-controls="brief-editor">Edit section</button>
+    </div>
+    <div class="decision-field-list">
+      {% for field in module.fields %}
+        <article class="decision-field {{ field.state }}">
+          <div class="decision-heading">
+            <h3>{{ field.label }}</h3>
+            <span class="decision-badge {{ field.state }}">{{ field.state_label }}</span>
+          </div>
+          {% if field.type == 'list' and field['items'] %}
+            <ul class="plain-list">
+              {% for item in field['items'] %}<li>{{ item.text }}</li>{% endfor %}
+            </ul>
+          {% elif field.type == 'text' and field.value %}
+            <p>{{ field.value }}</p>
+          {% else %}
+            <p class="quiet">Not specified.</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}

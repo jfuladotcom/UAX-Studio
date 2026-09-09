@@ -2,47 +2,55 @@
 
 ![UAX Studio — turn product ideas into AI-ready build briefs](docs/assets/uax-studio-social-preview.png)
 
-UAX Studio is a local-first Flask application that turns product ideas, workflows, and source notes into structured, editable build briefs for apps, agents, websites, automations, and internal tools.
+UAX Studio is a local-first Flask application for turning product ideas, workflows, and source notes into AI-ready Markdown build briefs for apps, agents, websites, automations, and internal tools.
 
-It works without an API key. The default deterministic provider keeps processing on your machine, while optional Ollama support can add suggestions from a locally installed model.
-
-> [!IMPORTANT]
-> UAX Studio is designed as a single-user local application. It does not include accounts or access control. Keep the default `127.0.0.1` host unless you intentionally add authentication and production hardening.
-
-## What it does
-
-- Turns one plain-language brief into a product target, feature plan, workflow, and acceptance checks.
-- Creates, duplicates, archives, restores, and permanently deletes local projects.
-- Accepts pasted text and TXT, Markdown, JSON, CSV, PDF, and DOCX sources.
-- Generates deterministic, editable synthesis and contract suggestions without an API key.
-- Optionally uses a detected local Ollama model, with deterministic fallback.
-- Versions a full Build Contract with implementation details and AI-agent guardrails.
-- Models workflow nodes and edges in a vanilla JavaScript canvas with table parity.
-- Runs product-quality reviewers and tracks findings.
-- Exports Markdown, JSON, Mermaid, hashes, a ZIP bundle, and `AI_BUILD_BRIEF.md`.
+It works without an API key. See the [tutorial](TUTORIAL.md) for a walkthrough from first launch to export.
 
 ## Requirements
 
-- Python 3.10 or newer
-- Windows, macOS, or Linux
-- Ollama only if you want local-model suggestions; it is not required
+- Python 3.10 or newer.
+- Windows, macOS, or Linux.
+- Ollama is optional and only needed for local-model suggestions.
 
-## Quick start
+UAX Studio is a single-user local application without accounts or access controls. Keep the default `127.0.0.1` host for normal use.
 
-### Windows
+## MVP Capabilities
 
-Double-click `start.bat`, or run:
+- Start in Simple Mode with one brief that generates a build target, feature plan, workflow, acceptance checks, and export path.
+- Create, duplicate, archive, restore, and permanently delete local projects.
+- Add pasted text or upload TXT, MD, JSON, CSV, PDF, and DOCX sources.
+- Generate editable Build Instructions directly from saved Background Information without an API key.
+- Optionally choose a detected local Ollama model for structured suggestions with deterministic fallback.
+- Edit Brief modules in an accessible side panel and version the full Build Instructions, including target product, implementation details, and agent guardrails when needed.
+- Model workflow nodes and edges in a vanilla JavaScript canvas with table parity.
+- Run product-quality reviewers and manage findings.
+- Export Markdown, JSON, Mermaid, manifest hashes, ZIP bundle, and `AI_BUILD_BRIEF.md`.
+
+## Architecture
+
+The app uses Flask 3, Jinja templates, Flask-SQLAlchemy, SQLite, Pydantic validation, and vanilla JavaScript modules. Route handlers live in `app/routes/main.py`; core behavior lives in `app/services/`.
+
+Projects stay on the local machine. The deterministic provider is the default and never calls a remote model. Ollama is optional and uses its local HTTP API only when a detected local model is selected in Settings. Local data and export directories can be changed from Settings.
+
+## Prompt Customization
+
+Prompt keys are registered in `app/services/prompt_service.py`. The editable prompt text lives in `app/prompts/*.md`. To add a new prompt, add a key and Markdown filename to `PROMPT_FILES`, create the Markdown file, then call `get_prompt("your_key")` where the provider request is made.
+
+## Windows Setup
+
+Open a terminal in the folder containing `run.py`. Double-click `start.bat`, or run these PowerShell commands (activation is optional):
 
 ```powershell
 py -m venv .venv
-.venv\Scripts\activate
-python -m pip install -r requirements.txt
-python run.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe run.py
 ```
 
-### macOS or Linux
+Open `http://127.0.0.1:5000`.
 
-Run `./start.sh`, or:
+## macOS/Linux Setup
+
+From the folder containing `run.py`, run `bash start.sh`, or:
 
 ```bash
 python3 -m venv .venv
@@ -51,44 +59,71 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000). On first launch, the app creates its local database, a local session secret, and a fictional GalleryFlow demo project.
+Open `http://127.0.0.1:5000`.
+
+On first launch, the app creates its SQLite database, local session secret, and fictional GalleryFlow demo. No existing database or personal project data is needed.
 
 ## Configuration
 
-UAX Studio works with no configuration. For overrides, copy `.env.example` to `.env` and edit only the values you need.
+The app works without a `.env` file. To override defaults, copy `.env.example` to `.env` and edit the values you need. Real secrets and local settings are excluded from Git.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `AX_HOST` | `127.0.0.1` | Local server interface. Keep this value for normal use. |
+| `AX_HOST` | `127.0.0.1` | Local server interface. |
 | `AX_PORT` | `5000` | Local server port. |
-| `AX_DATABASE_URI` | `sqlite:///ax_studio.sqlite3` | SQLAlchemy database URI. The default database is stored in `instance/`. |
-| `AX_DATA_DIR` | `data` | Parent folder for uploaded sources and generated exports. |
-| `AX_SECRET_KEY` | generated locally | Optional fixed Flask session secret. Never commit a real value. |
-| `AX_ACTIVE_PROVIDER` | `deterministic` | Active suggestion provider. |
-| `AX_OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Local Ollama API base URL. |
-| `AX_OLLAMA_MODEL` | `llama3.1` | Preferred local model name. |
+| `AX_DATABASE_URI` | `sqlite:///ax_studio.sqlite3` | Database URI; the default database lives in `instance/`. |
+| `AX_DATA_DIR` | `data` | Parent directory for local uploads and exports. |
+| `AX_SECRET_KEY` | generated locally | Optional fixed session secret; leave blank to generate one. |
+| `AX_ACTIVE_PROVIDER` | `deterministic` | Suggestion provider. |
+| `AX_OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Local Ollama API URL. |
+| `AX_OLLAMA_MODEL` | `llama3.1` | Preferred local model. |
 | `AX_OLLAMA_TIMEOUT` | `20` | Ollama request timeout in seconds. |
-| `AX_AUTO_INIT_DB` | `1` | Runs database setup and migrations during startup. |
+| `AX_AUTO_INIT_DB` | `1` | Initializes and upgrades the database at startup. |
 
-## Local data and privacy
+## Tests
 
-Projects, uploaded sources, settings, exports, the SQLite database, and the generated session key remain on the local machine by default. They are intentionally excluded from Git by `.gitignore`.
+Install development dependencies and run the checks used by GitHub Actions:
 
-- Database and settings: `instance/`
-- Uploaded sources: `data/uploads/`
-- Generated exports: `data/exports/`
+```bash
+python -m pip install -r requirements-dev.txt
+python -m ruff check .
+python -m compileall -q app tests run.py
+python -m pytest
+```
 
-Before sharing logs or exported bundles, inspect them for project content and source material.
+Tests use temporary SQLite databases and temporary data directories.
+
+The suite also runs browser checks when Node 22+ and Microsoft Edge, Chromium, or Chrome are installed. Set `UAX_TEST_BROWSER` to a Chromium browser executable if it is not detected automatically. These checks launch a hidden headless browser with a temporary profile and verify the Brief layout at desktop, tablet, and mobile widths, keyboard and screen-reader heading order, instruction generation, module editing, unsaved-change protection, and Workflow editing. Browser checks are skipped when those tools are unavailable.
+
+## Demo
+
+The app seeds a complete fictional demo named `GalleryFlow: Artist Submission Coordination`.
+
+Reset it with:
+
+```bash
+flask --app run.py seed-demo --reset
+```
+
+You can also reset it from Settings.
 
 ## Ollama
 
-Ollama is optional. In Settings, select the Ollama provider, enter its local base URL and model, then choose **Test local models**. If Ollama is unavailable or returns invalid structured JSON, UAX Studio shows a fallback notice and uses the deterministic provider.
+Ollama is optional. In Settings, use `Test local models` to detect local Ollama models from the configured base URL and list them under `Active provider`. Guided project creation, Build Instructions, and quality checks use the selected local model when it is available. If no local model is detected, or if Ollama fails to return valid structured JSON, UAX Studio uses the deterministic provider.
 
-## Supported uploads
+## Supported Uploads
 
 Supported extensions are `.txt`, `.md`, `.json`, `.csv`, `.pdf`, and `.docx`. Individual uploads are limited to 25 MB. Uploaded filenames are never used as storage filenames.
 
-## Export contents
+## Local Data
+
+Settings can change the data directory and export directory. Uploads are stored in an `uploads` folder inside the configured data directory, and generated bundles are written to the configured export directory. When either path changes, tracked files are moved with their records. The app rolls the operation back if a move fails.
+
+SQLite schema upgrades run automatically during startup through Alembic migrations. Before upgrading an existing database, UAX Studio creates a timestamped copy under `instance/backups/`.
+
+The repository excludes local databases, session secrets, settings, uploaded files, generated exports, virtual environments, and caches. Empty `.gitkeep` files preserve the default data folders.
+
+## Export Contents
 
 Exports include:
 
@@ -104,55 +139,34 @@ Exports include:
 - `implementation_manifest.json`
 - `AI_BUILD_BRIEF.md`
 
-Sources are excluded unless **Include my source files** is selected. When included, original uploads are stored under `sources/originals/` and editable text copies under `sources/text/`.
+Sources are excluded unless `Include my source files` is selected. Selected packages preserve original uploads under `sources/originals/` and editable text copies under `sources/text/`.
 
-## Development
+## Current Limitations
 
-Install development dependencies:
-
-```bash
-python -m pip install -r requirements-dev.txt
-```
-
-Run the quality checks used by GitHub Actions:
-
-```bash
-ruff check .
-python -m compileall -q app tests run.py
-python -m pytest
-```
-
-Tests use temporary SQLite databases and temporary data directories. To reset the fictional demo manually:
-
-```bash
-flask --app run.py seed-demo --reset
-```
-
-## Project structure
-
-| Path | Purpose |
-| --- | --- |
-| `app/routes/` | Flask routes and request handling |
-| `app/services/` | Core application, provider, export, and security behavior |
-| `app/templates/` | Jinja HTML templates |
-| `app/static/` | CSS, JavaScript, and icons |
-| `app/prompts/` | Editable provider prompt fragments |
-| `app/migrations/` | Alembic database migrations |
-| `tests/` | Unit and integration tests |
-| `data/` | Git-ignored local uploads and exports |
-| `instance/` | Git-ignored local database, settings, backups, and secret |
-
-## Current limitations
-
-- No multi-user accounts or remote access controls.
-- Browser automation checks are not bundled.
 - Ollama quality depends on the locally installed model.
-- The workflow canvas is intentionally focused on MVP graph editing.
+- The workflow canvas is intentionally modest and focused on MVP graph editing.
 
-## License and responsible use
+## Future Opportunities
 
-Copyright © 2026 Joseph Fula.
+- Multi-user collaboration.
+- Cloud sync.
+- Production integrations.
+- Figma plugin.
+- Browser extension.
+- Template marketplace.
+- Production agent hosting.
 
-UAX Studio is open-source software available under the [MIT License](LICENSE). It may be used for personal, educational, nonprofit, or commercial purposes subject to the license terms.
+## Troubleshooting
 
-The application produces planning and prototyping materials that require human review. Generated content may contain errors or unsuitable recommendations and does not constitute legal, security, compliance, financial, medical, or other professional advice. Users are responsible for protecting confidential information, respecting source-material and model licenses, and validating outputs before implementation. See [DISCLAIMER.md](DISCLAIMER.md) for complete responsible-use information.
+- If port 5000 is busy, set `AX_PORT=5001`.
+- If settings are corrupted, remove `instance/settings.json`.
+- If the demo needs a clean reset, run `flask --app run.py seed-demo --reset`.
+- If uploads fail, confirm the extension is supported and the file is below 25 MB.
+
+## Updating the GitHub Repository
+
+See [GITHUB_UPDATE.md](GITHUB_UPDATE.md) for instructions for updating the existing repository, including obsolete files to remove.
+
+## License and Responsible Use
+
+Copyright © 2026 Joseph Fula and UAX Studio contributors. See the [MIT License](LICENSE), [disclaimer](DISCLAIMER.md), and [third-party notices](THIRD_PARTY_NOTICES.md). Generated planning materials require human review before implementation.

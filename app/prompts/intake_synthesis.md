@@ -1,1 +1,3 @@
 Extract users, goals, features, workflow steps, screens or surfaces, data, integrations, constraints, assumptions, risks, and open questions for an AI-ready build brief.
+
+Analyze the entire supplied Background Information. Preserve explicit requirements without truncating later content. Use requirements for features, tasks for workflow steps, integrations for services and APIs, and data_needs for data models and storage. Distinguish source-backed statements from inferences. Keep unresolved assumptions under assumptions and unanswered questions under open_questions; never present them as settled decisions. Do not mention internal processing, schema names, or intermediate records in generated text.

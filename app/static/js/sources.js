@@ -40,22 +40,3 @@ document.querySelectorAll("[data-delete-source]").forEach((button) => {
     }
   });
 });
-
-document.querySelectorAll("[data-run-synthesis]").forEach((button) => {
-  button.addEventListener("click", async () => {
-    setControlLoading(button, true);
-    try {
-      const response = await axFetch(button.dataset.runSynthesis, {
-        method: "POST",
-        json: {},
-        loadingMessage: "Creating key details...",
-      });
-      notify(response.data.notice || response.message || "Key details created.");
-      window.location.href = window.location.pathname.replace("/sources", "/synthesis");
-    } catch (error) {
-      notify(error.message, "error");
-    } finally {
-      setControlLoading(button, false);
-    }
-  });
-});

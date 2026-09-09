@@ -1,6 +1,6 @@
 {% extends "projects/shell.html" %}
-{% block title %}{{ project.name }} - Background Info{% endblock %}
-{% block workspace_title %}Background Info{% endblock %}
+{% block title %}{{ project.name }} - Background Information{% endblock %}
+{% block workspace_title %}Background Information{% endblock %}
 {% block workspace %}
 <div class="split-layout">
   <section class="panel">
@@ -24,10 +24,10 @@
     </form>
   </section>
   <section class="panel">
-    <h3>Create key details</h3>
-    <p>Turn the saved background information into editable users, goals, features, constraints, risks, and open questions.</p>
-    <button class="button primary" data-run-synthesis="{{ url_for('main.synthesize_api', project_id=project.id) }}">Create key details</button>
-    <p class="quiet">Generated details are saved as drafts that you can edit before they guide the build brief.</p>
+    <h3>Build Instructions</h3>
+    <p>Generate a draft from all saved Background Information, then review and edit the instructions.</p>
+    <button class="button primary" type="button" data-generate-instructions="{{ url_for('main.suggest_contract_api', contract_id=project.active_contract.id) }}" data-instructions-url="{{ url_for('main.contract_page', project_id=project.id) }}">Generate Build Instructions</button>
+    <p class="quiet">Save any changes first. Assumptions and unanswered questions stay visible in the draft for your review.</p>
   </section>
 </div>
 
@@ -71,10 +71,11 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="empty-state">Add background information to create the key details for your build plan.</div>
+    <div class="empty-state">Add and save Background Information to generate your Build Instructions.</div>
   {% endif %}
 </section>
 {% endblock %}
 {% block scripts %}
 <script type="module" src="{{ url_for('static', filename='js/sources.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/build-instructions.js') }}"></script>
 {% endblock %}

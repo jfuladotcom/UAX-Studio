@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from app.extensions import db
 from app.models import Finding, Project, ReviewRun, utcnow
 from app.schemas import ProviderFailure, ReviewResult, dump_model
@@ -104,6 +106,7 @@ def _review_context(project: Project) -> str:
         f"Project: {project.name}\n"
         f"Target user: {project.target_user}\n"
         f"Outcome: {project.desired_outcome}\n"
-        f"Contract sections: {list(contract.keys())}\n"
+        f"Original description: {project.description}\n"
+        f"Build Instructions: {json.dumps(contract, ensure_ascii=False)}\n"
         f"Workflow nodes: {node_labels}\n"
     )

@@ -161,16 +161,6 @@ function restoreViewport() {
   });
 }
 
-function centerNode(node) {
-  const wrap = viewportWrap();
-  if (!wrap || !node) return;
-  window.requestAnimationFrame(() => {
-    wrap.scrollLeft = Math.max(0, (node.position_x + NODE_WIDTH / 2) * zoom - wrap.clientWidth / 2);
-    wrap.scrollTop = Math.max(0, (node.position_y + NODE_HEIGHT / 2) * zoom - wrap.clientHeight / 2);
-    nodeLayer?.querySelector(`[data-node-id="${window.CSS?.escape ? CSS.escape(node.id) : node.id}"]`)?.focus();
-  });
-}
-
 function worldPoint(event) {
   const wrap = viewportWrap();
   const rect = wrap.getBoundingClientRect();
@@ -573,15 +563,6 @@ function selectNode(id) {
   render();
 }
 
-function focusRequestedNode(id) {
-  const node = nodeById(id);
-  if (!node) return false;
-  setWorkflowView("graph");
-  selectNode(id);
-  centerNode(node);
-  return true;
-}
-
 function renderTables() {
   if (nodeTable) {
     nodeTable.textContent = "";
@@ -944,7 +925,6 @@ document.querySelector("#fit-workflow")?.addEventListener("click", fitWorkflow);
 
 const queryParams = new URLSearchParams(window.location.search);
 const requestedPanel = queryParams.get("panel") || app?.dataset.initialPanel;
-const requestedNodeId = queryParams.get("node") || app?.dataset.focusNodeId;
 setWorkflowView(app?.dataset.activeView || "graph");
 if (window.location.hash === "#sources" || requestedPanel === "sources") {
   setWorkflowView("graph");
@@ -958,6 +938,4 @@ if (window.location.hash === "#sources" || requestedPanel === "sources") {
 setSelectedNodeType(selectedNodeType());
 setAddMenuOpen(false);
 render();
-if (!focusRequestedNode(requestedNodeId)) {
-  restoreViewport();
-}
+restoreViewport();

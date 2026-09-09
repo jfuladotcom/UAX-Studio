@@ -54,12 +54,12 @@ def test_auto_correct_attention_fills_agent_gaps(client, app, csrf):
     brief_page = client.get(f"/agents/{project_id}/brief")
     brief_html = brief_page.get_data(as_text=True)
     assert brief_page.status_code == 200
-    assert "Auto correct" in brief_html
-    assert f"/api/agents/{project_id}/attention/auto-correct" in brief_html
+    assert "Brief health" not in brief_html
+    overview_html = client.get(f"/agents/{project_id}").get_data(as_text=True)
+    assert "Auto correct" in overview_html
+    assert f"/api/agents/{project_id}/attention/auto-correct" in overview_html
     assert "<built-in method" not in brief_html
     assert "Product foundation" in brief_html
-    assert "brief-health-actions" in brief_html
-    assert brief_html.index("Helpful next") < brief_html.index("brief-health-actions")
 
     result = client.post(
         f"/api/agents/{project_id}/attention/auto-correct",
@@ -128,7 +128,6 @@ def test_primary_project_workflow(client, app, csrf):
     )
     assert source.status_code == 201
 
-    assert client.post(f"/api/projects/{project.id}/synthesize", headers=headers, json={}).status_code == 200
     suggestion = client.post(f"/api/contracts/{contract_id}/suggest", headers=headers, json={})
     assert suggestion.status_code == 200, suggestion.get_json()
 
@@ -183,5 +182,6 @@ def test_primary_project_workflow(client, app, csrf):
 def test_csrf_blocks_state_change(client, app):
     with app.app_context():
         project = Project.query.filter_by(slug="galleryflow-artist-submission-coordination").first()
-    response = client.post(f"/api/projects/{project.id}/synthesize", json={})
+        contract_id = project.active_contract.id
+    response = client.post(f"/api/contracts/{contract_id}/suggest", json={})
     assert response.status_code == 400

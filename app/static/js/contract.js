@@ -48,8 +48,9 @@ function serializeContract() {
   return content;
 }
 
-async function saveContract() {
+export async function saveContract() {
   if (!editor) return;
+  window.clearTimeout(saveTimer);
   setStatus("Saving", "");
   try {
     await axFetch(editor.dataset.saveUrl, {
@@ -61,13 +62,14 @@ async function saveContract() {
   } catch (error) {
     setStatus("Save error", "error");
     notify(error.message, "error");
+    throw error;
   }
 }
 
 function scheduleSave() {
   setStatus("Unsaved", "");
   window.clearTimeout(saveTimer);
-  saveTimer = window.setTimeout(saveContract, 700);
+  saveTimer = window.setTimeout(() => saveContract().catch(() => {}), 700);
 }
 
 function createListItem() {
@@ -113,24 +115,6 @@ if (editor) {
     }
   });
 }
-
-document.querySelector("[data-contract-suggest]")?.addEventListener("click", async (event) => {
-  const button = event.currentTarget;
-  setControlLoading(button, true);
-  try {
-    const response = await axFetch(button.dataset.contractSuggest, {
-      method: "POST",
-      json: {},
-      loadingMessage: "Drafting build instructions...",
-    });
-    notify(response.data.notice || response.message || "Build instructions updated.");
-    window.location.reload();
-  } catch (error) {
-    notify(error.message, "error");
-  } finally {
-    setControlLoading(button, false);
-  }
-});
 
 document.querySelector("[data-contract-version]")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;

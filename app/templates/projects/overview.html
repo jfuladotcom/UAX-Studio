@@ -56,7 +56,7 @@
         {% for event in project.activity_events[:8] %}
           <article>
             <time>{{ event.created_at|datetime_local }}</time>
-            <span>{{ event.summary }}</span>
+            <span>{{ event.summary|current_ui_copy }}</span>
           </article>
         {% endfor %}
       </div>

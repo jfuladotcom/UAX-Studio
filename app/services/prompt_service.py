@@ -7,16 +7,10 @@ PROMPT_DIR = Path(__file__).resolve().parents[1] / "prompts"
 # Add new prompt keys here, then create the matching Markdown file in app/prompts.
 PROMPT_FILES = {
     "intake_synthesis": "intake_synthesis.md",
-    "simple_mode_synthesis": "simple_mode_synthesis.md",
     "contract_suggestions": "contract_suggestions.md",
-    "simple_mode_contract_suggestions": "simple_mode_contract_suggestions.md",
     "review_quality": "review_quality.md",
     "demo_seed_synthesis": "demo_seed_synthesis.md",
     "demo_seed_contract": "demo_seed_contract.md",
-    "fallback_synthesis": "fallback_synthesis.md",
-    "fallback_contract": "fallback_contract.md",
-    "fallback_simple_mode_synthesis": "fallback_simple_mode_synthesis.md",
-    "fallback_simple_mode_contract": "fallback_simple_mode_contract.md",
     "fallback_review": "fallback_review.md",
     "structured_output": "structured_output.md",
     "repair_json": "repair_json.md",

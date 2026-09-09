@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block body_class %}project-shell-body{% endblock %}
 {% block main_class %}project-page{% endblock %}
-{% set brief_nav_sections = ['simple', 'sources', 'synthesis', 'contract', 'reviews'] %}
+{% set brief_nav_sections = ['simple', 'sources', 'contract', 'reviews'] %}
 {% set nav_items = [
   ('overview', 'Overview', url_for('main.project_overview', project_id=project.id), section == 'overview'),
   ('brief', 'Brief', url_for('main.project_simple', project_id=project.id), section in brief_nav_sections),
@@ -12,8 +12,7 @@
   'simple': 'Brief',
   'export': 'Export',
   'workflow': 'Workflow',
-  'sources': 'Background Info',
-  'synthesis': 'Key Details',
+  'sources': 'Background Information',
   'contract': 'Build Instructions',
   'reviews': 'Quality Check',
   'overview': 'Overview'
@@ -35,12 +34,12 @@
   <nav class="rail-nav" aria-label="Agent">
     {% for key, label, href, active in nav_items %}
       <a class="{{ 'active' if active else '' }}" href="{{ href }}" {% if active %}aria-current="page"{% endif %}>
-
+        
         <span class="app-rail-label">{{ label }}</span>
       </a>
     {% endfor %}
   </nav>
-
+  
 </aside>
 {% endblock %}
 {% block content %}
@@ -50,8 +49,8 @@
     <div>
       <h2 id="workspace-title">{{ project.name }}</h2>
       <div class="workspace-subheader" aria-label="Workspace details">
-        <span><strong>Status</strong>{{ brief_health.status_label }}</span>
-        <span><strong>Progress</strong>{{ brief_health.percent }}% complete</span>
+        <span><strong>Status</strong><span data-project-status>{{ brief_health.status_label }}</span></span>
+        <span><strong>Progress</strong><span data-project-progress>{{ brief_health.percent }}% complete</span></span>
       </div>
       {% block workspace_intro %}{% endblock %}
     </div>

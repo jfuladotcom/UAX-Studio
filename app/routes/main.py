@@ -23,18 +23,21 @@ from app.models import (
     Finding,
     Project,
     SourceDocument,
-    SynthesisItem,
     Workflow,
     WorkflowEdge,
     WorkflowNode,
     utcnow,
 )
-from app.schemas import ContractSuggestion, ProviderFailure, SynthesisResult, dump_model
-from app.services.contract_service import (
-    CONTRACT_BLUEPRINT,
-    ensure_contract_shape,
-    merge_contract_suggestions,
+from app.services.brief_service import (
+    BRIEF_MODULES,
+    BriefConflict,
+    brief_module,
+    brief_modules,
+    save_brief_module,
+    sync_project_summary,
 )
+from app.services.build_instructions_service import generate_build_instructions
+from app.services.contract_service import CONTRACT_BLUEPRINT, ensure_contract_shape
 from app.services.export_service import (
     build_export,
     compose_export_files,
@@ -45,7 +48,6 @@ from app.services.project_service import (
     archive_project,
     auto_correct_attention,
     brief_health,
-    brief_review_sections,
     completion,
     create_project,
     duplicate_project,
@@ -54,14 +56,10 @@ from app.services.project_service import (
     restore_project,
     seed_demo_project,
     update_project_stage,
-    workflow_attention_node,
 )
-from app.services.prompt_service import get_prompt
 from app.services.providers import (
     OLLAMA_DISCOVERY_TIMEOUT,
     OLLAMA_PROVIDER_PREFIX,
-    DeterministicDemoProvider,
-    get_provider,
     list_ollama_models,
     provider_selection_value,
     resolve_ollama_model_name,
@@ -75,7 +73,7 @@ from app.services.security import (
     save_upload,
 )
 from app.services.settings import load_settings, save_settings
-from app.services.simple_mode import create_simple_project, simple_project_snapshot
+from app.services.simple_mode import create_simple_project
 from app.services.workflow_service import (
     NODE_TYPES,
     create_workflow_edge,
@@ -170,6 +168,11 @@ def create_simple_project_route():
             upload = request.files.get("starter_document")
             if upload and upload.filename:
                 _create_source_from_upload(result["project"], upload, upload.filename)
+                generation = generate_build_instructions(result["project"].active_contract)
+                result["providers"] = list(dict.fromkeys(result["providers"] + generation["providers"]))
+                result["notice"] = " ".join(dict.fromkeys(
+                    notice for notice in [result["notice"], generation["notice"]] if notice
+                ))
                 update_project_stage(result["project"])
         db.session.commit()
     except ValueError as exc:
@@ -280,15 +283,38 @@ def project_overview(project_id):
 @bp.get("/agents/<project_id>/brief")
 def project_simple(project_id):
     project = project_or_404(project_id)
-    attention_node = workflow_attention_node(project)
     return render_template(
         "projects/simple.html",
-        attention_node=attention_node,
-        brief_sections=brief_review_sections(project),
-        snapshot=simple_project_snapshot(project),
-        settings=load_settings(),
+        brief_modules=brief_modules(project),
         **project_context(project, "simple"),
     )
+
+
+@bp.route("/api/agents/<project_id>/brief/sections/<section_key>", methods=["GET", "PATCH"])
+def brief_section_api(project_id, section_key):
+    project = project_or_404(project_id)
+    if section_key not in BRIEF_MODULES:
+        abort(404)
+    if request.method == "GET":
+        return json_ok({"module": brief_module(project, section_key)})
+    try:
+        save_brief_module(project, section_key, request.get_json(silent=True))
+        record_activity(project, "brief_section_saved", f"{BRIEF_MODULES[section_key][0]} saved.")
+        update_project_stage(project)
+        db.session.commit()
+    except BriefConflict as exc:
+        db.session.rollback()
+        return json_error(str(exc), 409)
+    except ValueError as exc:
+        db.session.rollback()
+        return json_error(str(exc))
+    health = brief_health(project)
+    return json_ok({
+        "module": brief_module(project, section_key),
+        "modules_html": render_template("projects/_brief_modules.html", project=project, brief_modules=brief_modules(project)),
+        "status": health["status_label"],
+        "percent": health["percent"],
+    }, "Changes saved.")
 
 
 @bp.get("/projects/<project_id>/sources")
@@ -380,76 +406,13 @@ def delete_source_api(source_id):
     return json_ok(message="Background information removed.")
 
 
-@bp.post("/api/projects/<project_id>/synthesize")
-def synthesize_api(project_id):
-    project = project_or_404(project_id)
-    text = "\n\n".join(source.edited_text or source.extracted_text for source in project.source_documents)
-    if not text.strip():
-        return json_error("Add background information before creating key details.")
-    provider = get_provider()
-    fallback_notice = ""
-    try:
-        result = provider.generate_structured(
-            task_name="intake_synthesis",
-            system_prompt=get_prompt("intake_synthesis"),
-            user_prompt=text,
-            response_model=SynthesisResult,
-        )
-    except ProviderFailure as exc:
-        fallback_notice = f"{exc.message} The built-in draft helper was used instead."
-        provider = DeterministicDemoProvider()
-        result = provider.generate_structured(
-            task_name="intake_synthesis",
-            system_prompt=get_prompt("fallback_synthesis"),
-            user_prompt=text,
-            response_model=SynthesisResult,
-        )
-    for item in list(project.synthesis_items):
-        db.session.delete(item)
-    db.session.flush()
-    first_source = project.source_documents[0] if project.source_documents else None
-    for item in dump_model(result)["items"]:
-        db.session.add(
-            SynthesisItem(
-                project=project,
-                category=item["category"],
-                text=item["text"],
-                source_document=first_source if first_source and not item["is_inference"] else None,
-                source_locator=item["source_reference"],
-                is_inference=item["is_inference"],
-                confidence=item["confidence"],
-                inclusion_status="included",
-            )
-        )
-    record_activity(project, "synthesis_generated", "Key details generated.", {"provider": provider.name})
-    update_project_stage(project)
-    db.session.commit()
-    return json_ok({"notice": fallback_notice, "provider": provider.name}, "Key details created.")
-
-
 @bp.get("/projects/<project_id>/synthesis")
 @bp.get("/agents/<project_id>/details")
-def synthesis_page(project_id):
+def legacy_details_redirect(project_id):
+    # Preserve old bookmarks while retiring the separate editing screen.
     project = project_or_404(project_id)
-    groups = {}
-    for item in project.synthesis_items:
-        groups.setdefault(item.category, []).append(item)
-    return render_template("projects/synthesis.html", groups=groups, **project_context(project, "synthesis"))
+    return redirect(url_for("main.contract_page", project_id=project.id))
 
-
-@bp.patch("/api/synthesis-items/<item_id>")
-def update_synthesis_item_api(item_id):
-    item = db.get_or_404(SynthesisItem, item_id)
-    payload = request.get_json(silent=True) or {}
-    if "text" in payload:
-        item.text = str(payload["text"]).strip()
-    if "inclusion_status" in payload:
-        item.inclusion_status = "included" if payload["inclusion_status"] == "included" else "excluded"
-    if "confidence" in payload and payload["confidence"] in {"high", "medium", "low", "unknown"}:
-        item.confidence = payload["confidence"]
-    update_project_stage(item.project)
-    db.session.commit()
-    return json_ok({"item": _synthesis_to_dict(item)}, "Key detail saved.")
 
 @bp.get("/projects/<project_id>/contract")
 @bp.get("/agents/<project_id>/instructions")
@@ -474,6 +437,7 @@ def update_contract_api(contract_id):
     content = payload.get("content_json")
     if not isinstance(content, dict):
         return json_error("Build instructions must be structured.")
+    sync_project_summary(contract.project, contract.content_json, content)
     contract.content_json = content
     contract.status = payload.get("status", contract.status)
     contract.updated_at = utcnow()
@@ -487,36 +451,18 @@ def update_contract_api(contract_id):
 def suggest_contract_api(contract_id):
     contract = db.get_or_404(ExperienceContract, contract_id)
     project = contract.project
-    included_items = [item for item in project.synthesis_items if item.inclusion_status == "included"]
-    if not included_items:
-        return json_error("Include at least one key detail before creating build instructions.")
-    context = "\n".join(item.text for item in included_items)
-    provider = get_provider()
-    fallback_notice = ""
     try:
-        result = provider.generate_structured(
-            task_name="contract_suggestions",
-            system_prompt=get_prompt("contract_suggestions"),
-            user_prompt=context,
-            response_model=ContractSuggestion,
-        )
-    except ProviderFailure as exc:
-        fallback_notice = f"{exc.message} The built-in draft helper was used instead."
-        provider = DeterministicDemoProvider()
-        result = provider.generate_structured(
-            task_name="contract_suggestions",
-            system_prompt=get_prompt("fallback_contract"),
-            user_prompt=context,
-            response_model=ContractSuggestion,
-        )
-    contract.content_json = merge_contract_suggestions(
-        contract.content_json or {}, dump_model(result)["content_json"]
+        result = generate_build_instructions(contract)
+        record_activity(project, "contract_suggested", "Build Instructions generated from saved Background Information.")
+        update_project_stage(project)
+        db.session.commit()
+    except ValueError as exc:
+        db.session.rollback()
+        return json_error(str(exc))
+    return json_ok(
+        {"content_json": contract.content_json, **result},
+        "Build Instructions generated. Review and edit the draft below.",
     )
-    contract.updated_at = utcnow()
-    record_activity(project, "contract_suggested", "Build instruction suggestions merged from key details.")
-    update_project_stage(project)
-    db.session.commit()
-    return json_ok({"content_json": contract.content_json, "notice": fallback_notice}, "Build instructions updated.")
 
 
 @bp.post("/api/contracts/<contract_id>/versions")
@@ -896,18 +842,6 @@ def _source_to_dict(source: SourceDocument) -> dict:
         "edited_text": source.edited_text,
         "extraction_status": source.extraction_status,
         "extraction_error": source.extraction_error,
-    }
-
-
-def _synthesis_to_dict(item: SynthesisItem) -> dict:
-    return {
-        "id": item.id,
-        "category": item.category,
-        "text": item.text,
-        "source_reference": item.source_locator or ("Inference" if item.is_inference else ""),
-        "is_inference": item.is_inference,
-        "confidence": item.confidence,
-        "inclusion_status": item.inclusion_status,
     }
 
 

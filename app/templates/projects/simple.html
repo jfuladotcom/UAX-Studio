@@ -2,154 +2,44 @@
 {% block title %}{{ project.name }} - Brief{% endblock %}
 {% block workspace_title %}Review your build brief{% endblock %}
 {% block workspace_intro %}
-<p class="workspace-intro">Confirm what UAX Studio understood, fill gaps, and keep AI-drafted assumptions visible before handing the package to a builder.</p>
+<p class="workspace-intro">Review your starting idea and build decisions. Use Edit section to make changes here.</p>
 {% endblock %}
 {% block workspace %}
-<div class="brief-review-layout">
-  <div class="brief-document">
-    <section class="issue-banner {{ brief_health.status_key }}" aria-labelledby="brief-health-summary">
-      <div>
-        <p class="eyebrow">Brief health</p>
-        <h2 id="brief-health-summary">{{ brief_health.summary }}</h2>
-      </div>
-      <div class="action-row">
-        {% if brief_health.issue_count %}
-          <button class="button primary" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
-        {% endif %}
-        {% if attention_node %}
-          <a class="button" href="{{ url_for('main.workflow_page', project_id=project.id, view='graph', panel='inspector', node=attention_node.id) }}">Edit next detail</a>
-        {% else %}
-          <a class="button" href="{{ url_for('main.workflow_page', project_id=project.id, view='graph', panel='inspector') }}">Edit next detail</a>
-        {% endif %}
-      </div>
-    </section>
-
-    <section class="brief-section original-idea">
-      <div class="brief-section-heading">
-        <div>
-          <p class="eyebrow">From your input</p>
-          <h2>Original idea</h2>
-        </div>
-        <a class="button small" href="{{ url_for('main.sources_page', project_id=project.id) }}">View source</a>
-      </div>
-      <dl class="detail-list decision-summary-list">
-        <div><dt>Product type</dt><dd>{{ project.workflow_name or 'Not specified' }}</dd></div>
-        <div><dt>Audience</dt><dd>{{ project.target_user or 'Not specified' }}</dd></div>
-        <div><dt>Outcome</dt><dd>{{ project.desired_outcome or 'Not specified' }}</dd></div>
-      </dl>
-      <p>{{ project.description or 'No additional description captured yet.' }}</p>
-    </section>
-
-    {% for section in brief_sections %}
-      <section class="brief-section">
-        <div class="brief-section-heading">
-          <h2>{{ section['title'] }}</h2>
-          <a class="button small" href="{{ url_for('main.contract_page', project_id=project.id) }}">Edit section</a>
-        </div>
-        <div class="decision-field-list">
-          {% for decision in section['decisions'] %}
-            <article class="decision-field {{ decision['state'] }}">
-              <div class="decision-heading">
-                <h3>{{ decision['label'] }}</h3>
-                <span class="decision-badge {{ decision['state'] }}">{{ decision['state_label'] }}</span>
-              </div>
-              {% if decision['items'] %}
-                <ul class="plain-list">
-                  {% for item in decision['items'][:6] %}
-                    <li>{{ item }}</li>
-                  {% endfor %}
-                </ul>
-              {% elif decision['text'] %}
-                <p>{{ decision['text'] }}</p>
-              {% else %}
-                <p class="quiet">Not specified.</p>
-              {% endif %}
-              <small>{{ decision['source'] }}</small>
-            </article>
-          {% endfor %}
-        </div>
-      </section>
-    {% endfor %}
-
-    <section class="brief-section">
-      <div class="brief-section-heading">
-        <h2>Workflow summary</h2>
-        <a class="button small" href="{{ url_for('main.workflow_page', project_id=project.id) }}">Open workflow</a>
-      </div>
-      <ol class="step-list brief-step-list">
-        {% for node in snapshot.workflow_nodes[:8] %}
-          <li>
-            <span>{{ node.node_type|replace('_', ' ')|title }}</span>
-            <strong>{{ node.label }}</strong>
-            <p>{{ node.description }}</p>
-          </li>
-        {% else %}
-          <li>
-            <strong>No steps mapped yet.</strong>
-            <p>Add workflow steps if this handoff needs a sequence.</p>
-          </li>
-        {% endfor %}
-      </ol>
-    </section>
-
-    <details class="advanced-editing-panel">
-      <summary>
-        <span>Advanced editing</span>
-        <small>Background info, source text, full instructions, and manual sequencing</small>
-      </summary>
-      <div class="advanced-editing-grid">
-        <a class="advanced-editing-link" href="{{ url_for('main.sources_page', project_id=project.id) }}">
-          <strong>Background Info</strong>
-          <span>Upload files, paste notes, and edit extracted text.</span>
-        </a>
-        <a class="advanced-editing-link" href="{{ url_for('main.synthesis_page', project_id=project.id) }}">
-          <strong>Key Details</strong>
-          <span>Review source-backed goals, requirements, risks, and open questions.</span>
-        </a>
-        <a class="advanced-editing-link" href="{{ url_for('main.contract_page', project_id=project.id) }}">
-          <strong>Build Instructions</strong>
-          <span>Edit target product, features, data, constraints, and acceptance criteria.</span>
-        </a>
-      </div>
-    </details>
-  </div>
-
-  <aside class="brief-health-panel" aria-labelledby="brief-health-title">
-    <h2 id="brief-health-title">Brief health</h2>
-    <span class="health-badge {{ brief_health.status_key }}">{{ brief_health.status_label }}</span>
-    {% if brief_health.issue_count %}
-      <button class="button primary" type="button" data-auto-correct-attention="{{ url_for('main.auto_correct_attention_api', project_id=project.id) }}">Auto correct</button>
-    {% endif %}
-
-    <h3>Required</h3>
-    {% if brief_health.required_issues %}
-      <ul class="plain-list issue-list-small">
-        {% for issue in brief_health.required_issues %}
-          <li><strong>{{ issue['title'] }}</strong><span>{{ issue['detail'] }}</span></li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="quiet">Required details are present.</p>
-    {% endif %}
-
-    <h3>Helpful next</h3>
-    {% if brief_health.advisory_issues %}
-      <ul class="plain-list issue-list-small">
-        {% for issue in brief_health.advisory_issues[:5] %}
-          <li><strong>{{ issue['title'] }}</strong><span>{{ issue['detail'] }}</span></li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="quiet">No advisory items right now.</p>
-    {% endif %}
-
-    <div class="brief-health-actions">
-      <a class="button" href="{{ url_for('main.export_page', project_id=project.id) }}">Export</a>
-      <a class="button primary" href="{{ url_for('main.workflow_page', project_id=project.id) }}">Open workflow</a>
-    </div>
-  </aside>
+<div class="brief-module-grid" id="brief-modules">
+  {% include "projects/_brief_modules.html" %}
 </div>
+
+<section class="brief-section advanced-editing-panel" aria-labelledby="advanced-editing-title">
+  <h2 id="advanced-editing-title">Advanced Editing</h2>
+  <p class="quiet">Review saved background information and edit the full Build Instructions.</p>
+  <div class="advanced-editing-grid">
+    <a class="advanced-editing-link" href="{{ url_for('main.sources_page', project_id=project.id) }}">
+      <strong>Background Information</strong>
+      <span>Upload files, paste notes, and edit saved source text.</span>
+    </a>
+    <a class="advanced-editing-link" href="{{ url_for('main.contract_page', project_id=project.id) }}">
+      <strong>Build Instructions</strong>
+      <span>Generate and edit the full instructions, assumptions, questions, and acceptance criteria.</span>
+    </a>
+  </div>
+</section>
+
+<dialog id="brief-editor" class="brief-editor-panel" aria-modal="true" aria-labelledby="brief-editor-title" aria-describedby="brief-editor-help">
+  <form id="brief-section-form">
+    <header class="brief-editor-header">
+      <h2 id="brief-editor-title" tabindex="-1">Edit section</h2>
+      <button class="icon-button" type="button" data-close-brief-editor aria-label="Close editing panel">&times;</button>
+    </header>
+    <p id="brief-editor-help" class="quiet">Edit this section, then save your changes.</p>
+    <p id="brief-editor-message" role="status" aria-live="polite"></p>
+    <div id="brief-editor-fields"></div>
+    <footer class="brief-editor-actions">
+      <button class="button" type="button" data-close-brief-editor>Cancel</button>
+      <button class="button primary" type="submit" id="brief-editor-save">Save changes</button>
+    </footer>
+  </form>
+</dialog>
 {% endblock %}
 {% block scripts %}
-<script type="module" src="{{ url_for('static', filename='js/attention.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/brief-editor.js') }}"></script>
 {% endblock %}

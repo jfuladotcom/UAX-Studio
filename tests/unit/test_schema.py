@@ -28,6 +28,7 @@ def test_unversioned_legacy_database_is_backed_up_and_upgraded(tmp_path):
         with db.engine.begin() as connection:
             connection.execute(text("DROP TABLE alembic_version"))
         db.session.remove()
+
     class UpgradeConfig(LegacyConfig):
         AUTO_INIT_DB = True
 
@@ -39,3 +40,4 @@ def test_unversioned_legacy_database_is_backed_up_and_upgraded(tmp_path):
         assert revision == SCHEMA_HEAD
         assert list((tmp_path / "backups").glob("legacy-*.sqlite3"))
         db.session.remove()
+

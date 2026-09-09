@@ -17,7 +17,6 @@
 {% if initial_panel %}
   {% set initial_view = 'graph' %}
 {% endif %}
-{% set focus_node_id = request.args.get('node', '') %}
 <div class="workflow-view-bar">
   <div class="workflow-view-toggle" role="tablist" aria-label="Workflow view">
     <button class="button small" type="button" role="tab" aria-controls="workflow-graph-panel" aria-selected="{{ 'true' if initial_view == 'graph' else 'false' }}" aria-pressed="{{ 'true' if initial_view == 'graph' else 'false' }}" data-workflow-view="graph">Graph</button>
@@ -25,7 +24,7 @@
     <button class="button small" type="button" role="tab" aria-controls="workflow-sequence-panel" aria-selected="{{ 'true' if initial_view == 'sequence' else 'false' }}" aria-pressed="{{ 'true' if initial_view == 'sequence' else 'false' }}" data-workflow-view="sequence">Build Sequence</button>
   </div>
 </div>
-<section class="workflow-app{{ ' drawer-open' if initial_panel }}" data-active-view="{{ initial_view }}" data-initial-panel="{{ initial_panel }}" data-focus-node-id="{{ focus_node_id }}" data-workflow-id="{{ workflow.id }}" data-workflow='{{ workflow_data|tojson }}'>
+<section class="workflow-app{{ ' drawer-open' if initial_panel }}" data-active-view="{{ initial_view }}" data-initial-panel="{{ initial_panel }}" data-workflow-id="{{ workflow.id }}" data-workflow='{{ workflow_data|tojson }}'>
   <div id="workflow-graph-panel" class="workflow-builder-layout" role="tabpanel" data-workflow-view-panel="graph" {% if initial_view != 'graph' %}hidden{% endif %}>
     <div class="workflow-main">
       <div class="toolbar-strip workflow-toolbar" aria-label="Step map controls">
