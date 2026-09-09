@@ -1,1 +1,0 @@
-Deterministic contract fallback.
