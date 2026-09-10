@@ -2553,3 +2553,34 @@ body.reduced-motion *::after {
     color: #000000;
   }
 }
+
+/* Overview — red needs-attention state */
+:root {
+  --attention: #ff6b6b;
+  --attention-soft: rgba(255, 107, 107, 0.12);
+  --attention-medium: rgba(255, 107, 107, 0.32);
+}
+
+.overview-health.needs_input .health-badge.needs_input {
+  border-color: var(--attention-medium);
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+.overview-health.needs_input .check-list li.needs-attention {
+  color: var(--attention);
+}
+
+.overview-health.needs_input .check-list li.needs-attention > span {
+  border-color: var(--attention);
+}
+
+.overview-health.needs_input .check-list li.needs-attention > span::after {
+  color: var(--attention);
+}
+
+.overview-health.needs_input .callout {
+  border-left-color: var(--attention);
+  background: var(--attention-soft);
+  color: #ffd6d6;
+}
