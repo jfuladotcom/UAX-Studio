@@ -1,3 +1,5 @@
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AtbI52lc21M?si=u86lOOeyCcUQgdwm" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 # UAX Studio
 
 ![UAX Studio — turn product ideas into AI-ready build briefs](docs/assets/uax-studio-social-preview.png)
