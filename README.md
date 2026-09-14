@@ -1,17 +1,10 @@
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=AtbI52lc21M">
-    <img src="https://youtube.com" alt="Watch the video" width="560">
-  </a>
-</p>
-
-
 # UAX Studio
 
 ![UAX Studio — turn product ideas into AI-ready build briefs](docs/assets/uax-studio-social-preview.png)
 
 UAX Studio is a local-first Flask application for turning product ideas, workflows, and source notes into AI-ready Markdown build briefs for apps, agents, websites, automations, and internal tools.
 
-It works without an API key. See the [tutorial](TUTORIAL.md) for a walkthrough from first launch to export.
+It works without an API key. See the [tutorial](TUTORIAL.md) or  [![Watch the video](https://youtube.com)](https://www.youtube.com/watch?v=AtbI52lc21M) for a walkthrough from first launch to export.
 
 ## Requirements
 
