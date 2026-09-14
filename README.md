@@ -1,4 +1,9 @@
-[![Watch the video](https://youtube.com)](https://www.youtube.com/watch?v=AtbI52lc21M)
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=AtbI52lc21M">
+    <img src="https://youtube.com" alt="Watch the video" width="560">
+  </a>
+</p>
+
 
 # UAX Studio
 
