@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="An interactive introduction and complete tutorial for UAX Studio. Shape an idea, define agents, refine with your AI, and export a portable build package.">
+  <title>UAX Studio · The complete guide</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="slides.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#slide-stage">Skip to presentation</a>
+  <header class="site-header">
+    <a class="brand" href="#welcome" aria-label="UAX Studio guide, first slide">
+      <svg class="brand-mark" viewBox="0 0 28 34" fill="none" aria-hidden="true"><path d="M5 5v15a9 9 0 0 0 18 0V5" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M23 5v15a9 9 0 0 1-9 9" stroke="currentColor" opacity=".55" stroke-width="9" stroke-linecap="round"/><path d="M23 5v8" stroke="#f5f5f5" opacity=".6" stroke-width="9" stroke-linecap="round"/></svg>
+      <span>UAX <span class="brand-light">Studio</span></span>
+      <span class="brand-suffix">The complete guide</span>
+    </a>
+    <nav class="top-actions" aria-label="Presentation tools">
+      <button type="button" id="outline-button" class="text-button" aria-haspopup="dialog"><span aria-hidden="true">☷</span> <span>Contents</span></button>
+      <button type="button" id="notes-button" class="text-button" aria-haspopup="dialog">Notes</button>
+      <button type="button" id="reader-button" class="text-button" aria-pressed="false">Read all</button>
+      <button type="button" id="fullscreen-button" class="icon-button" title="Full screen (F)" aria-label="Enter full screen">⛶</button>
+      <a class="button button-small header-app" href="https://uax-studio.fernandofula-art.chatgpt.site" target="_blank" rel="noopener noreferrer">Open UAX <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  <div class="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
+  <main id="slide-stage" tabindex="-1" aria-label="UAX Studio presentation"></main>
+  <footer class="deck-footer">
+    <div class="footer-context"><span class="status-dot" aria-hidden="true"></span><span id="chapter-label">Project overview</span></div>
+    <div class="footer-navigation" aria-label="Slide navigation">
+      <button type="button" id="previous-button" class="icon-button" aria-label="Previous slide" title="Previous slide (left arrow)">←</button>
+      <button type="button" id="slide-counter" class="counter" aria-label="Choose a slide" aria-haspopup="dialog">01 / 34</button>
+      <button type="button" id="next-button" class="button button-small" aria-label="Next slide">Next <span aria-hidden="true">→</span></button>
+    </div>
+    <button type="button" id="shortcuts-button" class="keyboard-hint" aria-haspopup="dialog">Keyboard shortcuts <kbd>?</kbd></button>
+  </footer>
+  <dialog id="outline-dialog" class="outline-dialog" aria-labelledby="outline-title">
+    <div class="dialog-head"><div><p class="eyebrow">UAX Studio guide</p><h2 id="outline-title">Contents</h2></div><button class="icon-button" data-close-dialog aria-label="Close contents">×</button></div>
+    <label class="search-label" for="slide-search">Find a topic</label>
+    <input id="slide-search" type="search" placeholder="Try “export”, “AI”, or “guidance”…" autocomplete="off">
+    <nav id="slide-outline" aria-label="All slides"></nav>
+    <p id="search-status" class="small muted" role="status"></p>
+  </dialog>
+  <dialog id="notes-dialog" aria-labelledby="notes-title">
+    <div class="dialog-head"><div><p class="eyebrow">Presenter notes & extra guidance</p><h2 id="notes-title">Slide notes</h2></div><button class="icon-button" data-close-dialog aria-label="Close notes">×</button></div>
+    <div id="notes-content" class="notes-content"></div>
+  </dialog>
+  <dialog id="shortcuts-dialog" aria-labelledby="shortcuts-title">
+    <div class="dialog-head"><h2 id="shortcuts-title">Presentation controls</h2><button class="icon-button" data-close-dialog aria-label="Close shortcuts">×</button></div>
+    <dl class="shortcuts-list"><div><dt>Next / previous slide</dt><dd><kbd>→</kbd> <kbd>←</kbd></dd></div><div><dt>First / last slide</dt><dd><kbd>Home</kbd> <kbd>End</kbd></dd></div><div><dt>Contents</dt><dd><kbd>C</kbd></dd></div><div><dt>Presenter notes</dt><dd><kbd>N</kbd></dd></div><div><dt>Full screen</dt><dd><kbd>F</kbd></dd></div><div><dt>Close a dialog</dt><dd><kbd>Esc</kbd></dd></div></dl>
+    <p class="small muted">Shortcuts pause while you type or interact with a dialog. Read all provides a continuous document. Print creates one page per slide.</p>
+    <button id="print-button" class="button">Print / Save as PDF</button>
+  </dialog>
+  <dialog id="copy-dialog" aria-labelledby="copy-title">
+    <div class="dialog-head"><h2 id="copy-title">Copy this example</h2><button class="icon-button" data-close-dialog aria-label="Close copy dialog">×</button></div>
+    <p>Your browser could not copy automatically. Select the text below and copy it.</p><textarea id="copy-fallback" rows="10" readonly></textarea>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <p id="slide-announcement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+  <noscript><div class="noscript"><h1>UAX Studio guide</h1><p>This interactive presentation needs JavaScript. Enable JavaScript and reopen index.html. All files run locally, with no backend or sign-in required for this guide.</p><p>The included README and examples are also available as plain text files.</p></div></noscript>
+</body>
+</html>

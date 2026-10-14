@@ -1,0 +1,223 @@
+{
+  "format": "uax.project",
+  "schemaVersion": 2,
+  "id": "project-uax-tutorial-evidence-brief",
+  "revision": 1,
+  "title": "Community event evidence brief",
+  "idea": "Help our community group understand options for reducing waste at events.",
+  "goal": "A short evidence brief that separates observations from assumptions and lists what we need to learn before choosing a trial.",
+  "audience": "A community group preparing a discussion about its next research questions.",
+  "context": "Fictional tutorial exercise. No baseline or impact measurement is available. The goal is a careful brief and next questions, not a real-world recommendation.",
+  "updatedAt": "2026-10-13T19:00:00.000Z",
+  "sharedRules": "Keep every source and output labelled as fictional practice material. Use only the provided notes. Trace each substantive claim to a source. Separate reported observations, suggestions, assumptions, and missing information. Do not invent measurements, effects, savings, costs, or dates. Ask before expanding the research scope. Respect human review before each handoff.",
+  "exportMode": "chat",
+  "deliverables": [],
+  "steps": [],
+  "decisions": [],
+  "constraints": [],
+  "criteria": [],
+  "questions": [
+    {
+      "id": "question-baseline",
+      "question": "What baseline and success measure would a real trial use?",
+      "answer": "Unresolved. The brief should explain why this information is needed before selecting a real trial.",
+      "origin": "user"
+    },
+    {
+      "id": "question-budget",
+      "question": "What budget, time, and operational capacity are available?",
+      "answer": "Unresolved. Record the question instead of assuming resources.",
+      "origin": "user"
+    },
+    {
+      "id": "question-output",
+      "question": "What should this exercise produce?",
+      "answer": "A source index, evidence map, discussion brief, and quality review based only on fictional practice notes.",
+      "origin": "user"
+    }
+  ],
+  "sources": [
+    {
+      "id": "source-practice-notes",
+      "name": "practice-notes.md",
+      "text": "# Community event waste: fictional practice notes\n\nThese notes are invented for the UAX Studio tutorial. They are not research findings or evidence about a real event. Keep this label in any output that uses them.\n\n## Project question\n\nWhat should a community group learn before choosing an approach to reduce waste at its events?\n\n## Note A: organizer interview\n\nSource: fictional interview with an event organizer. Date not recorded.\n\nThe organizer says volunteers have sometimes found mixed items in the waste bins. The organizer suggests clearer signs, but no counts, photographs, or measurements accompany this account.\n\n## Note B: volunteer interview\n\nSource: fictional interview with a volunteer. Date not recorded.\n\nThe volunteer suggests reusable service items. The group has not established storage space, washing capacity, purchasing costs, or the number of people who would participate.\n\n## Note C: planning discussion\n\nSource: fictional planning note. Date not recorded.\n\nParticipants suggest comparing clearer bin signs with reusable service items. They want a short brief to decide what questions to investigate next. They have not selected an intervention or agreed on a budget.\n\n## Information that is missing\n\n- A measured waste baseline and a definition of what would count as improvement.\n- Attendance estimates for a representative event.\n- A confirmed budget and available volunteer time.\n- Operational requirements for each option.\n- Any measured impact or comparison of the suggested approaches.\n\n## Requested treatment\n\nPreserve the distinction between an observation reported in a fictional interview, a suggestion, an assumption, and missing information. Do not calculate effects, savings, or percentages from these notes. The purpose is to practice structuring a careful evidence brief, not to make a real-world recommendation."
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent-source",
+      "name": "Source organizer",
+      "kind": "research",
+      "purpose": "Organize the supplied notes and preserve their source context.",
+      "inputs": "The project question, shared rules, and practice-notes.md.",
+      "instructions": "Read all provided notes. Assign a stable ID to each source and record its origin and any stated date. Separate direct observations from opinions or suggestions. Preserve enough context to locate every entry in the notes. List missing information explicitly. Do not add outside evidence or infer measured results. Produce SOURCE_INDEX.md.",
+      "outputs": [
+        {
+          "name": "SOURCE_INDEX.md",
+          "description": "Source IDs, origin, stated date, note location, evidence type, and missing context."
+        }
+      ],
+      "checks": "Every entry traces to a supplied note. No invented details. Missing dates and fictional practice content remain explicitly labelled.",
+      "rules": "Ask before adding external sources. Do not present fictional notes as real evidence.",
+      "approvalRequired": true,
+      "position": {
+        "x": 80,
+        "y": 110
+      },
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "agent-analyst",
+      "name": "Evidence analyst",
+      "kind": "research",
+      "purpose": "Map the claims, uncertainties, and gaps supported by the source notes.",
+      "inputs": "SOURCE_INDEX.md, the original practice notes, and the project question.",
+      "instructions": "Use the source index to map each claim to its source. Distinguish a reported observation, an opinion, a suggested approach, an assumption, and missing information. Identify which parts of the question the notes can address. Compare clearer bin signs and reusable service items only in terms of the information supplied and the missing inputs. Do not infer effects or recommend a proven intervention. Produce EVIDENCE_MAP.md.",
+      "outputs": [
+        {
+          "name": "EVIDENCE_MAP.md",
+          "description": "Claims, source IDs, evidence type, limits, and open questions."
+        }
+      ],
+      "checks": "Each claim has a source or is labelled as an assumption. No quantitative effect or certainty exceeds the notes. The missing baseline and resources remain visible.",
+      "rules": "Use only the fictional notes. Ask the user before expanding the evidence base.",
+      "approvalRequired": true,
+      "position": {
+        "x": 390,
+        "y": 110
+      },
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "agent-writer",
+      "name": "Brief writer",
+      "kind": "create",
+      "purpose": "Create a readable discussion brief that reflects the available evidence and its limits.",
+      "inputs": "EVIDENCE_MAP.md, SOURCE_INDEX.md, the shared brief, and the intended audience.",
+      "instructions": "Draft a short brief for the community group. State the question and the fictional nature of the exercise. Explain what the notes support and what remains unknown. Present the suggested approaches as possibilities to investigate, not validated solutions. Link substantive claims to source IDs. End with prioritized questions the group must answer before choosing a real trial. Produce DECISION_BRIEF.md. If the Reviewer requests changes, respond to each issue and revise within the agreed review-round limit.",
+      "outputs": [
+        {
+          "name": "DECISION_BRIEF.md",
+          "description": "A concise discussion brief with source references, uncertainties, and next questions."
+        }
+      ],
+      "checks": "A reader can distinguish source evidence from interpretation. No invented impact claims. Next questions relate to a real gap in the notes.",
+      "rules": "Do not claim that an intervention was tested. Ask for approval before external sharing or additional research.",
+      "approvalRequired": true,
+      "position": {
+        "x": 700,
+        "y": 110
+      },
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "agent-reviewer",
+      "name": "Reviewer",
+      "kind": "review",
+      "purpose": "Check whether the brief stays faithful to the source material and requested outcome.",
+      "inputs": "DECISION_BRIEF.md, EVIDENCE_MAP.md, SOURCE_INDEX.md, original notes, and shared rules.",
+      "instructions": "Check every substantive claim against the source trail. Identify unsupported conclusions, missing references, hidden assumptions, and omissions of important uncertainty. Confirm that the material remains labelled as fictional. Produce REVIEW.md with issue, location, evidence, and suggested correction. Request specific revisions from the Brief writer when needed. Use at most two review rounds. After the limit, report unresolved issues and ask the user how to proceed. Do not mark a real-world intervention as proven.",
+      "outputs": [
+        {
+          "name": "REVIEW.md",
+          "description": "Traceable issues, requested corrections, remaining limits, and a recommendation for the human reviewer."
+        }
+      ],
+      "checks": "Each issue points to a passage or source. The review addresses both factual support and the agreed brief goal. Remaining uncertainty is explicit.",
+      "rules": "A clean structural review does not establish real-world truth or safety. Stop for human review before treating the brief as final.",
+      "approvalRequired": true,
+      "position": {
+        "x": 1010,
+        "y": 110
+      },
+      "status": "confirmed",
+      "origin": "user"
+    }
+  ],
+  "connections": [
+    {
+      "id": "edge-source-analyst",
+      "source": "agent-source",
+      "target": "agent-analyst",
+      "label": "Source index and source notes",
+      "kind": "handoff",
+      "maxRounds": 1,
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "edge-analyst-writer",
+      "source": "agent-analyst",
+      "target": "agent-writer",
+      "label": "Evidence map and open questions",
+      "kind": "handoff",
+      "maxRounds": 1,
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "edge-writer-reviewer",
+      "source": "agent-writer",
+      "target": "agent-reviewer",
+      "label": "Draft brief with source references",
+      "kind": "handoff",
+      "maxRounds": 1,
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "edge-source-reviewer",
+      "source": "agent-source",
+      "target": "agent-reviewer",
+      "label": "Original source trail",
+      "kind": "reference",
+      "maxRounds": 1,
+      "status": "confirmed",
+      "origin": "user"
+    },
+    {
+      "id": "edge-reviewer-writer",
+      "source": "agent-reviewer",
+      "target": "agent-writer",
+      "label": "Specific corrections to resolve",
+      "kind": "revision",
+      "maxRounds": 2,
+      "status": "confirmed",
+      "origin": "user"
+    }
+  ],
+  "exploration": {
+    "information": "Fictional interview notes and suggestions from a small community group.",
+    "unknowns": "No measured baseline, confirmed budget, operational capacity, or tested impact is available.",
+    "approaches": [
+      {
+        "id": "approach-evidence",
+        "title": "Evidence brief",
+        "summary": "Organize the available notes and identify what the group should learn before choosing a trial.",
+        "bestFor": "Understanding what existing notes support and where information is missing.",
+        "needs": "The available notes and a clear question.",
+        "tradeoffs": "Cannot establish whether an intervention works.",
+        "assumptions": "A source-grounded brief would help the group plan its next discussion. The notes are fictional.",
+        "agents": [],
+        "connections": [],
+        "origin": "user"
+      },
+      {
+        "id": "approach-trial",
+        "title": "Trial planning",
+        "summary": "Define a small trial and what it would measure after the group has the required context.",
+        "bestFor": "Planning the next real measurements.",
+        "needs": "A baseline, agreed success measure, budget, and operational constraints.",
+        "tradeoffs": "Needs information that is not available in this exercise.",
+        "assumptions": "The group may later have capacity for a trial. This is untested and is not the chosen tutorial route.",
+        "agents": [],
+        "connections": [],
+        "origin": "user"
+      }
+    ],
+    "selectedId": "approach-evidence"
+  }
+}
