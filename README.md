@@ -1,6 +1,6 @@
 # UAX Studio
 
-<h2>[The GPT Site Version Here](https://uax-studio.fernandofula-art.chatgpt.site/)</h2>
+<h2>[![The GPT Site Version Here](https://uax-studio.fernandofula-art.chatgpt.site/)]</h2>
 
 ![UAX Studio — turn product ideas into AI-ready build briefs](docs/assets/uax-studio-social-preview.png)
 
